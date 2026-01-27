@@ -1,0 +1,22 @@
+openapi: 3.1.0
+info:
+  title: Shop API
+  version: 2.0.0
+servers:
+  - url: https://shop.example.com/api
+    description: Shop production server
+paths:
+  /inventory/check:
+    post:
+      operationId: checkStock
+      summary: Check inventory
+      responses:
+        '200':
+          description: Inventory status
+  /orders:
+    post:
+      operationId: createOrder
+      summary: Create order
+      responses:
+        '201':
+          description: Order created

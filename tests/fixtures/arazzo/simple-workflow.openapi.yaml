@@ -1,0 +1,47 @@
+openapi: 3.1.0
+info:
+  title: Simple E-Commerce Workflow
+  version: 1.0.0
+  description: A simple workflow for testing
+servers:
+  - url: https://api.test.com/v1
+    description: Production server
+  - url: https://staging-api.test.com/v1
+    description: Staging server
+paths:
+  /workflows/getProduct:
+    post:
+      operationId: execute_getProduct
+      summary: Get product details
+      description: Retrieve product information by ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+                  description: Product identifier
+              required:
+                - productId
+      responses:
+        "200":
+          description: Workflow getProduct executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  productName:
+                    type: string
+                    description: "Output from runtime expression: $steps.fetchProduct.outputs.name"
+                  productPrice:
+                    type: string
+                    description: "Output from runtime expression: $steps.fetchProduct.outputs.price"
+                required:
+                  - productName
+                  - productPrice
+      x-arazzo-workflow-id: getProduct
+x-arazzo-document: /Users/frank/GitHub/arazzo2openapi/tests/fixtures/arazzo/simple-workflow.yaml

@@ -1,0 +1,80 @@
+arazzo: 1.0.0
+info:
+  title: Complex E-Commerce Workflow
+  version: 1.0.0
+  description: A complex workflow with multiple steps and dependencies
+sourceDescriptions:
+  - name: shopAPI
+    url: ../openapi/shop-api.yaml
+    type: openapi
+  - name: paymentAPI
+    url: ../openapi/payment-api.yaml
+    type: openapi
+workflows:
+  - workflowId: placeOrder
+    summary: Place a new order
+    description: Complete order placement workflow including inventory check, payment, and confirmation
+    inputs:
+      type: object
+      properties:
+        customerId:
+          type: string
+          format: uuid
+          description: Customer identifier
+        items:
+          type: array
+          description: Items to order
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+              quantity:
+                type: integer
+                minimum: 1
+            required:
+              - productId
+              - quantity
+        paymentMethod:
+          type: string
+          enum:
+            - credit_card
+            - paypal
+            - bank_transfer
+      required:
+        - customerId
+        - items
+        - paymentMethod
+    steps:
+      - stepId: checkInventory
+        description: Verify product availability
+        operationId: shopAPI.checkStock
+        parameters:
+          - name: productIds
+            in: body
+            value: $inputs.items[*].productId
+      - stepId: processPayment
+        description: Process customer payment
+        operationId: paymentAPI.createPayment
+        parameters:
+          - name: customerId
+            in: body
+            value: $inputs.customerId
+          - name: amount
+            in: body
+            value: $steps.checkInventory.outputs.totalPrice
+      - stepId: createOrder
+        description: Create order record
+        operationId: shopAPI.createOrder
+        parameters:
+          - name: customerId
+            in: body
+            value: $inputs.customerId
+          - name: items
+            in: body
+            value: $inputs.items
+    outputs:
+      orderId: $steps.createOrder.outputs.id
+      orderStatus: $steps.createOrder.outputs.status
+      totalAmount: $steps.checkInventory.outputs.totalPrice
+      paymentConfirmation: $steps.processPayment.outputs.transactionId

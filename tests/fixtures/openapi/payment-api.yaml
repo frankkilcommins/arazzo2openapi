@@ -1,0 +1,15 @@
+openapi: 3.1.0
+info:
+  title: Payment API
+  version: 1.0.0
+servers:
+  - url: https://payment.example.com/v1
+    description: Payment gateway
+paths:
+  /payments:
+    post:
+      operationId: createPayment
+      summary: Process payment
+      responses:
+        '200':
+          description: Payment processed

@@ -1,0 +1,57 @@
+arazzo: 1.0.0
+info:
+  title: Multi-Workflow Example
+  version: 1.0.0
+  description: Multiple workflows for testing
+sourceDescriptions:
+  - name: shopAPI
+    url: ../openapi/shop-api.yaml
+    type: openapi
+workflows:
+  - workflowId: placeOrder
+    summary: Place a new order
+    description: Complete order placement workflow
+    inputs:
+      type: object
+      properties:
+        customerId:
+          type: string
+      required:
+        - customerId
+    steps:
+      - stepId: createOrder
+        operationId: shopAPI.createOrder
+    outputs:
+      orderId: $steps.createOrder.outputs.id
+
+  - workflowId: cancelOrder
+    summary: Cancel an order
+    description: Cancel an existing order
+    inputs:
+      type: object
+      properties:
+        orderId:
+          type: string
+      required:
+        - orderId
+    steps:
+      - stepId: deleteOrder
+        operationId: shopAPI.deleteOrder
+    outputs:
+      status: $steps.deleteOrder.outputs.status
+
+  - workflowId: updateOrder
+    summary: Update order details
+    description: Modify an existing order
+    inputs:
+      type: object
+      properties:
+        orderId:
+          type: string
+      required:
+        - orderId
+    steps:
+      - stepId: modifyOrder
+        operationId: shopAPI.updateOrder
+    outputs:
+      updatedOrder: $steps.modifyOrder.outputs
