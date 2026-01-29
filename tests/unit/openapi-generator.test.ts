@@ -37,7 +37,7 @@ describe('OpenAPIGenerator', () => {
       expect(openapi.get('openapi')?.toValue()).toBe('3.1.0');
       expect(openapi.get('info')).toBeDefined();
       expect(openapi.get('paths')).toBeDefined();
-      expect(openapi.get('x-arazzo-document')?.toValue()).toBe(filePath);
+      expect(openapi.get('info')?.get('x-arazzo-document')?.toValue()).toBe(filePath);
     });
 
     it('should include derived info metadata', async () => {

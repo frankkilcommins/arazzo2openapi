@@ -87,7 +87,7 @@ describe('CLI Integration', () => {
       expect(parsedContent.info.title).toBe('Simple E-Commerce Workflow');
       expect(parsedContent.paths).toBeDefined();
       expect(parsedContent.paths['/workflows/getProduct']).toBeDefined();
-      expect(parsedContent['x-arazzo-document']).toBe(inputPath);
+      expect(parsedContent.info['x-arazzo-document']).toBe(inputPath);
     });
 
     it('should convert simple workflow to YAML', async () => {
@@ -137,7 +137,7 @@ describe('CLI Integration', () => {
       expect(parsedContent.info.title).toBe('Simple E-Commerce Workflow');
       expect(parsedContent.paths).toBeDefined();
       expect(parsedContent.paths['/workflows/getProduct']).toBeDefined();
-      expect(parsedContent['x-arazzo-document']).toBe(inputPath);
+      expect(parsedContent.info['x-arazzo-document']).toBe(inputPath);
     });
 
     it('should convert multiple workflows', async () => {

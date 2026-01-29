@@ -48,7 +48,7 @@ export class OpenAPIGenerator {
 
     // Derive and set info
     const info = this.metadataDeriver.deriveInfo(arazzoDoc, workflows, config);
-    openapi.set('info', this.createInfoElement(info));
+    openapi.set('info', this.createInfoElement(info, arazzoDocPath));
 
     // Derive and set servers
     const servers = await this.metadataDeriver.deriveServers(arazzoDoc, arazzoDocPath, config);
@@ -60,22 +60,24 @@ export class OpenAPIGenerator {
     const paths = this.generatePaths(workflows, config);
     openapi.set('paths', paths);
 
-    // Add x-arazzo-document extension
-    openapi.set('x-arazzo-document', new StringElement(arazzoDocPath));
-
     return openapi;
   }
 
   /**
    * Create InfoElement from derived metadata
    */
-  private createInfoElement(info: { title: string; version: string; description?: string }): InfoElement {
+  private createInfoElement(
+    info: { title: string; version: string; description?: string },
+    arazzoDocPath: string
+  ): InfoElement {
     const infoElement = new InfoElement();
     infoElement.set('title', new StringElement(info.title));
     infoElement.set('version', new StringElement(info.version));
     if (info.description) {
       infoElement.set('description', new StringElement(info.description));
     }
+    // Add x-arazzo-document extension to info object
+    infoElement.set('x-arazzo-document', new StringElement(arazzoDocPath));
     return infoElement;
   }
 
@@ -129,6 +131,9 @@ export class OpenAPIGenerator {
     // Set operation ID
     operation.set('operationId', new StringElement(`execute_${workflow.workflowId}`));
 
+    // Add x-arazzo-workflow-id extension right after operationId
+    operation.set('x-arazzo-workflow-id', new StringElement(workflow.workflowId));
+
     // Set summary and description
     if (workflow.summary) {
       operation.set('summary', new StringElement(workflow.summary));
@@ -146,9 +151,6 @@ export class OpenAPIGenerator {
     // Set responses
     const responses = this.createResponses(workflow, config);
     operation.set('responses', responses);
-
-    // Add x-arazzo-workflow-id extension
-    operation.set('x-arazzo-workflow-id', new StringElement(workflow.workflowId));
 
     return operation;
   }
