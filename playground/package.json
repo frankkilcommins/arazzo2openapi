@@ -15,7 +15,7 @@
     "@speclynx/apidom-ns-arazzo-1": "^1.0.0",
     "@speclynx/apidom-parser-adapter-arazzo-json-1": "^1.0.0",
     "@speclynx/apidom-parser-adapter-arazzo-yaml-1": "^1.0.0",
-    "astro": "^4.16.0",
+    "astro": "^5.15.9",
     "yaml": "^2.8.2"
   },
   "devDependencies": {
