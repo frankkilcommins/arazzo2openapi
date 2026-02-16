@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 import { Command } from 'commander';
 import { promises as fs } from 'fs';
@@ -8,6 +9,18 @@ import { WorkflowAnalyzer } from '../core/workflow-analyzer';
 import { OpenAPIGenerator } from '../core/openapi-generator';
 import { GenerationConfig, ServerConfig } from '../types/config';
 import { toValue } from '@speclynx/apidom-core';
+import { stringify as yamlStringify } from 'yaml';
+
+interface CliOptions {
+  output?: string;
+  format?: string;
+  openapiVersion: string;
+  title?: string;
+  versionOverride?: string;
+  description?: string;
+  server: string[];
+  responseCode?: number;
+}
 
 const program = new Command();
 
@@ -24,7 +37,7 @@ program
   .option('--description <description>', 'Override the OpenAPI description')
   .option('--server <url>', 'Add a server URL (can be used multiple times)', collectServers, [])
   .option('--response-code <code>', 'HTTP response code for successful workflow execution (default: 200)', parseInt)
-  .action(async (arazzoFile: string, options: any) => {
+  .action(async (arazzoFile: string, options: CliOptions) => {
     try {
       await convertArazzoToOpenAPI(arazzoFile, options);
     } catch (error) {
@@ -50,7 +63,7 @@ function isRemoteUrl(url: string): boolean {
 /**
  * Main conversion function
  */
-async function convertArazzoToOpenAPI(arazzoFile: string, options: any): Promise<void> {
+async function convertArazzoToOpenAPI(arazzoFile: string, options: CliOptions): Promise<void> {
   let arazzoPath: string;
 
   // Check if input is a remote URL or local file
@@ -79,9 +92,11 @@ async function convertArazzoToOpenAPI(arazzoFile: string, options: any): Promise
   const workflows = analyzer.analyzeAllWorkflows(document);
   console.log(`✓ Analyzed ${workflows.length} workflow(s)`);
 
+  // Determine output format
+  const outputFormat: 'json' | 'yaml' = (options.format as 'json' | 'yaml') || detectedFormat;
+
   // Determine output path
-  const outputPath = options.output || deriveOutputPath(arazzoPath, options.format || detectedFormat);
-  const outputFormat = options.format || detectedFormat;
+  const outputPath = options.output || deriveOutputPath(arazzoPath, outputFormat);
 
   // Convert servers from CLI
   const servers: ServerConfig[] = options.server.map((url: string) => ({
@@ -143,7 +158,7 @@ function deriveOutputPath(inputPath: string, format: 'json' | 'yaml'): string {
  * Write OpenAPI document to file in specified format
  */
 async function writeOpenAPIDocument(
-  openapi: any,
+  openapi: unknown,
   outputPath: string,
   format: 'json' | 'yaml'
 ): Promise<void> {
@@ -154,10 +169,8 @@ async function writeOpenAPIDocument(
   if (format === 'json') {
     content = JSON.stringify(openapiObj, null, 2);
   } else {
-    // For YAML, use a simple serialization approach
-    // In Phase 4, we can enhance this with proper YAML library
-    const yaml = require('yaml');
-    content = yaml.stringify(openapiObj, {
+    // For YAML, use yaml library
+    content = yamlStringify(openapiObj, {
       indent: 2,
       lineWidth: 0,
       minContentWidth: 0,

@@ -9,8 +9,6 @@
     "api",
     "converter",
     "cli",
-    "apidom",
-    "specification",
     "swagger",
     "rest-api"
   ],

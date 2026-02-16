@@ -1,9 +1,7 @@
 import {
   ArazzoSpecification1Element,
   WorkflowElement,
-  WorkflowsElement,
   StepElement,
-  SourceDescriptionsElement,
 } from '@speclynx/apidom-ns-arazzo-1';
 import { WorkflowAnalysisError } from '../types/errors';
 
