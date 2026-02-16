@@ -79,3 +79,9 @@ test-results/
 # Package manager files (uncomment if using yarn or pnpm instead of npm)
 # yarn.lock
 # pnpm-lock.yaml
+CLAUDE.md
+
+# Playground (Astro)
+playground/dist/
+playground/node_modules/
+playground/.astro/

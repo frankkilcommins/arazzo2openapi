@@ -14,18 +14,30 @@ import { ArazzoParseError } from '../types/errors';
  */
 export class ArazzoParser {
   /**
-   * Load and parse an Arazzo document from a file
+   * Load and parse an Arazzo document from a file or URL
    */
-  async loadDocument(filePath: string): Promise<{
+  async loadDocument(filePathOrUrl: string): Promise<{
     document: ArazzoSpecification1Element;
     detectedFormat: 'json' | 'yaml';
   }> {
     try {
-      // Read file content
-      const content = await fs.readFile(filePath, 'utf-8');
+      let content: string;
 
-      // Detect format from file extension
-      const detectedFormat = this.detectFormat(filePath);
+      // Check if it's a remote URL
+      if (this.isRemoteUrl(filePathOrUrl)) {
+        // Fetch remote URL
+        const response = await fetch(filePathOrUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        content = await response.text();
+      } else {
+        // Read local file
+        content = await fs.readFile(filePathOrUrl, 'utf-8');
+      }
+
+      // Detect format from file extension or URL
+      const detectedFormat = this.detectFormat(filePathOrUrl);
 
       // Parse based on format
       const document = await this.parseContent(content, detectedFormat);
@@ -39,11 +51,18 @@ export class ArazzoParser {
         throw error;
       }
       throw new ArazzoParseError(
-        `Failed to load Arazzo document from ${filePath}: ${
+        `Failed to load Arazzo document from ${filePathOrUrl}: ${
           error instanceof Error ? error.message : String(error)
         }`
       );
     }
+  }
+
+  /**
+   * Check if a URL is remote (http:// or https://)
+   */
+  private isRemoteUrl(url: string): boolean {
+    return url.startsWith('http://') || url.startsWith('https://');
   }
 
   /**
@@ -57,7 +76,7 @@ export class ArazzoParser {
   /**
    * Parse Arazzo content based on format using ApiDOM
    */
-  private async parseContent(
+  async parseContent(
     content: string,
     format: 'json' | 'yaml'
   ): Promise<ArazzoSpecification1Element> {

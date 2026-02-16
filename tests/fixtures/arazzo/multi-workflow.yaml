@@ -54,4 +54,4 @@ workflows:
       - stepId: modifyOrder
         operationId: shopAPI.updateOrder
     outputs:
-      updatedOrder: $steps.modifyOrder.outputs
+      updatedOrder: $steps.modifyOrder.outputs.body

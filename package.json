@@ -1,7 +1,7 @@
 {
   "name": "arazzo2openapi",
-  "version": "0.1.0",
-  "description": "Convert Arazzo workflow descriptions to OpenAPI documents",
+  "version": "1.0.0",
+  "description": "Convert Arazzo workflow documents to OpenAPI documents",
   "keywords": [
     "arazzo",
     "openapi",
@@ -9,7 +9,10 @@
     "api",
     "converter",
     "cli",
-    "apidom"
+    "apidom",
+    "specification",
+    "swagger",
+    "rest-api"
   ],
   "author": {
     "name": "Frank Kilcommins @frankkilcommins",
@@ -19,6 +22,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/frankkilcommins/arazzo2openapi"
+  },
+  "homepage": "https://frankkilcommins.github.io/arazzo2openapi",
+  "bugs": {
+    "url": "https://github.com/frankkilcommins/arazzo2openapi/issues"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -50,7 +57,12 @@
     "@speclynx/apidom-ns-openapi-3-1": "^1.0.0",
     "@speclynx/apidom-parser-adapter-arazzo-json-1": "^1.0.0",
     "@speclynx/apidom-parser-adapter-arazzo-yaml-1": "^1.0.0",
+    "@speclynx/apidom-parser-adapter-openapi-json-3-0": "^2.10.3",
+    "@speclynx/apidom-parser-adapter-openapi-json-3-1": "^2.11.0",
+    "@speclynx/apidom-parser-adapter-openapi-yaml-3-0": "^2.10.3",
+    "@speclynx/apidom-parser-adapter-openapi-yaml-3-1": "^2.11.0",
     "@speclynx/apidom-reference": "^1.0.0",
+    "@swaggerexpert/arazzo-runtime-expression": "^2.0.3",
     "chalk": "^5.0.0",
     "commander": "^11.0.0",
     "inquirer": "^9.0.0",

@@ -1,0 +1,100 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Convert Arazzo workflow documents to OpenAPI documents" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/arazzo2openapi/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+    <script>
+      // Theme handling
+      const theme: 'light' | 'dark' = (() => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+          return localStorage.getItem('theme') as 'light' | 'dark';
+        }
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          return 'dark';
+        }
+        return 'light';
+      })();
+
+      if (theme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+
+      window.localStorage.setItem('theme', theme);
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --color-bg: #ffffff;
+    --color-text: #1a202c;
+    --color-border: #e2e8f0;
+    --color-primary: #3182ce;
+    --color-primary-hover: #2c5282;
+    --color-secondary: #718096;
+    --color-code-bg: #f7fafc;
+    --color-success: #48bb78;
+    --color-error: #f56565;
+  }
+
+  .dark {
+    --color-bg: #1a202c;
+    --color-text: #f7fafc;
+    --color-border: #4a5568;
+    --color-primary: #4299e1;
+    --color-primary-hover: #63b3ed;
+    --color-secondary: #a0aec0;
+    --color-code-bg: #2d3748;
+    --color-success: #68d391;
+    --color-error: #fc8181;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: system-ui, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  code {
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>

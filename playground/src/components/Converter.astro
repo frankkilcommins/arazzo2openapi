@@ -1,0 +1,921 @@
+---
+// This component will be hydrated on the client
+---
+
+<div class="converter">
+  <div class="gh-ribbon">
+    <a href="https://github.com/frankkilcommins/arazzo2openapi" target="_blank" title="Source code for arazzo2openapi">Fork me on GitHub</a>
+  </div>
+
+  <header class="header">
+    <div class="container">
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+      </button>
+      <div class="header-logos">
+        <img src="/arazzo2openapi/logos/arazzo-logo.png" alt="Arazzo" class="header-logo" />
+        <span class="arrow">→</span>
+        <img src="/arazzo2openapi/logos/openapi-logo.png" alt="OpenAPI" class="header-logo" />
+      </div>
+      <h1 class="title">Convert Arazzo Workflow Documents to OpenAPI Documents</h1>
+      <p class="subtitle">arazzo2openapi Converter</p>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="container">
+      <div class="info-banner">
+        <p>
+          💡 This playground shows example conversions and allows you paste or load an Arazzo Document from a URL. For local conversions, use the <code>arazzo2openapi</code> CLI.
+        </p>
+      </div>
+
+      <div class="controls-row">
+        <div class="control-group control-narrow">
+          <label for="example-select">Example Arazzo Conversions:</label>
+          <select id="example-select">
+            <option value="">-- Select an example --</option>
+            <option value="simple">Simple Workflow</option>
+            <option value="petstore">Petstore Order Flow</option>
+            <option value="multi">Multi-Workflow</option>
+          </select>
+        </div>
+        <div class="control-group control-wide">
+          <label for="url-input">Load Arazzo Document from URL:</label>
+          <div class="url-input-group">
+            <input type="url" id="url-input" placeholder="https://example.com/workflow.yaml" />
+            <button id="load-url-btn" class="btn btn-primary">Load</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-container">
+        <div class="editor-pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <img src="/arazzo2openapi/logos/arazzo-logo.png" alt="Arazzo" class="pane-logo pane-logo-light" />
+              <img src="/arazzo2openapi/logos/arazzo-logo-white.png" alt="Arazzo" class="pane-logo pane-logo-dark" />
+              <h2>Arazzo Document (Input)</h2>
+            </div>
+            <div class="button-group">
+              <button id="convert-btn" class="btn btn-primary">Convert</button>
+              <button id="clear-input-btn" class="btn btn-secondary">Clear</button>
+            </div>
+          </div>
+          <textarea id="arazzo-input" class="code-display editable" placeholder="Paste your Arazzo document here or load from URL..."></textarea>
+        </div>
+
+        <div class="editor-pane">
+          <div class="pane-header">
+            <div class="pane-title">
+              <img src="/arazzo2openapi/logos/openapi-logo.png" alt="OpenAPI" class="pane-logo pane-logo-light" />
+              <img src="/arazzo2openapi/logos/openapi-logo-white.png" alt="OpenAPI" class="pane-logo pane-logo-dark" />
+              <h2>OpenAPI Document (Output)</h2>
+            </div>
+            <button id="copy-output-btn" class="btn btn-secondary">Copy</button>
+          </div>
+          <pre id="openapi-output" class="code-display"></pre>
+        </div>
+      </div>
+
+      <div class="cli-section">
+        <h2>Convert Your Own Documents</h2>
+        <p>Install the CLI to convert your own Arazzo documents with full type inference from source OpenAPI documents:</p>
+        <div class="cli-examples">
+          <div class="cli-example">
+            <h3>Installation</h3>
+            <pre><code>npm install -g arazzo2openapi</code></pre>
+          </div>
+          <div class="cli-example">
+            <h3>Usage</h3>
+            <pre><code># Convert local file
+arazzo2openapi workflow.yaml -o openapi.yaml
+
+# Convert remote URL
+arazzo2openapi https://example.com/workflow.yaml -o openapi.yaml</code></pre>
+          </div>
+          <div class="cli-example">
+            <h3>Links</h3>
+            <p>
+              <a href="https://github.com/frankkilcommins/arazzo2openapi" target="_blank">GitHub</a> •
+              <a href="https://www.npmjs.com/package/arazzo2openapi" target="_blank">NPM</a> •
+              <a href="https://github.com/frankkilcommins/arazzo2openapi#readme" target="_blank">Documentation</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>
+        Built with <a href="https://github.com/frankkilcommins/arazzo2openapi" target="_blank">arazzo2openapi</a> v1.0.0
+      </p>
+    </div>
+  </footer>
+</div>
+
+<script>
+  import { convertArazzoToOpenAPI } from '../lib/converter';
+
+  const examples = {
+    simple: {
+      input: `arazzo: 1.0.0
+info:
+  title: Simple Product Workflow
+  version: 1.0.0
+sourceDescriptions:
+  - name: productsAPI
+    url: https://api.example.com/openapi.json
+    type: openapi
+workflows:
+  - workflowId: getProduct
+    summary: Retrieve product details
+    inputs:
+      type: object
+      properties:
+        productId:
+          type: string
+      required:
+        - productId
+    steps:
+      - stepId: fetchProduct
+        operationId: productsAPI.getProduct
+        parameters:
+          - name: id
+            in: path
+            value: $inputs.productId
+    outputs:
+      name: $steps.fetchProduct.outputs.name
+      price: $steps.fetchProduct.outputs.price`,
+      output: `openapi: 3.1.0
+info:
+  title: Simple Product Workflow
+  version: 1.0.0
+  x-arazzo-document: workflow.yaml
+servers:
+  - url: https://api.example.com
+paths:
+  /workflows/getProduct:
+    post:
+      operationId: execute_getProduct
+      x-arazzo-workflow-id: getProduct
+      summary: Retrieve product details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+              required:
+                - productId
+      responses:
+        '200':
+          description: Workflow getProduct executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: Product name
+                  price:
+                    type: number
+                    format: float
+                    description: Product price
+                required:
+                  - name
+                  - price`
+    },
+    petstore: {
+      input: `{
+  "arazzo": "1.0.0",
+  "info": {
+    "title": "Petstore Order Workflow",
+    "version": "1.0.0"
+  },
+  "sourceDescriptions": [
+    {
+      "name": "petstore",
+      "url": "https://petstore3.swagger.io/api/v3/openapi.json",
+      "type": "openapi"
+    }
+  ],
+  "workflows": [
+    {
+      "workflowId": "orderPet",
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "petId": { "type": "integer" },
+          "quantity": { "type": "integer", "default": 1 }
+        },
+        "required": ["petId"]
+      },
+      "steps": [
+        {
+          "stepId": "placeOrder",
+          "operationId": "petstore.placeOrder",
+          "requestBody": {
+            "contentType": "application/json",
+            "payload": {
+              "petId": "$inputs.petId",
+              "quantity": "$inputs.quantity",
+              "status": "placed"
+            }
+          }
+        }
+      ],
+      "outputs": {
+        "orderId": "$steps.placeOrder.outputs.id",
+        "status": "$steps.placeOrder.outputs.status"
+      }
+    }
+  ]
+}`,
+      output: `{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Petstore Order Workflow",
+    "version": "1.0.0",
+    "x-arazzo-document": "workflow.json"
+  },
+  "servers": [
+    {
+      "url": "/api/v3"
+    }
+  ],
+  "paths": {
+    "/workflows/orderPet": {
+      "post": {
+        "operationId": "execute_orderPet",
+        "x-arazzo-workflow-id": "orderPet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "petId": {
+                    "type": "integer"
+                  },
+                  "quantity": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["petId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Workflow orderPet executed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["placed", "approved", "delivered"]
+                    }
+                  },
+                  "required": ["orderId", "status"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`
+    },
+    multi: {
+      input: `arazzo: 1.0.0
+info:
+  title: Multi-Workflow Example
+  version: 1.0.0
+sourceDescriptions:
+  - name: api
+    url: https://api.example.com/openapi.json
+    type: openapi
+workflows:
+  - workflowId: createItem
+    steps:
+      - stepId: create
+        operationId: api.createItem
+    outputs:
+      itemId: $steps.create.outputs.id
+
+  - workflowId: updateItem
+    inputs:
+      type: object
+      properties:
+        itemId:
+          type: string
+      required: [itemId]
+    steps:
+      - stepId: update
+        operationId: api.updateItem
+    outputs:
+      result: $steps.update.outputs.status`,
+      output: `openapi: 3.1.0
+info:
+  title: Multi-Workflow Example
+  version: 1.0.0
+  x-arazzo-document: workflow.yaml
+servers:
+  - url: https://api.example.com
+paths:
+  /workflows/createItem:
+    post:
+      operationId: execute_createItem
+      x-arazzo-workflow-id: createItem
+      responses:
+        '200':
+          description: Workflow createItem executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itemId:
+                    type: string
+                required:
+                  - itemId
+
+  /workflows/updateItem:
+    post:
+      operationId: execute_updateItem
+      x-arazzo-workflow-id: updateItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                itemId:
+                  type: string
+              required:
+                - itemId
+      responses:
+        '200':
+          description: Workflow updateItem executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                required:
+                  - result`
+    }
+  };
+
+  const arazzoInput = document.getElementById('arazzo-input') as HTMLTextAreaElement;
+  const openapiOutput = document.getElementById('openapi-output');
+  const exampleSelect = document.getElementById('example-select') as HTMLSelectElement;
+  const urlInput = document.getElementById('url-input') as HTMLInputElement;
+  const loadUrlBtn = document.getElementById('load-url-btn') as HTMLButtonElement;
+  const convertBtn = document.getElementById('convert-btn') as HTMLButtonElement;
+  const clearInputBtn = document.getElementById('clear-input-btn');
+  const copyOutputBtn = document.getElementById('copy-output-btn');
+
+  // Theme toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  themeToggle?.addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
+
+  // Example selector
+  exampleSelect?.addEventListener('change', (e) => {
+    const value = (e.target as HTMLSelectElement).value;
+    if (value && examples[value as keyof typeof examples]) {
+      const example = examples[value as keyof typeof examples];
+      if (arazzoInput) arazzoInput.value = example.input;
+      if (openapiOutput) openapiOutput.textContent = example.output;
+    }
+  });
+
+  // Convert function
+  async function convertArazzo() {
+    const content = arazzoInput?.value?.trim();
+    if (!content) {
+      if (openapiOutput) {
+        openapiOutput.textContent = '// Please provide an Arazzo document to convert';
+      }
+      return;
+    }
+
+    convertBtn.textContent = 'Converting...';
+    convertBtn.disabled = true;
+
+    try {
+      const result = await convertArazzoToOpenAPI(content);
+      if (openapiOutput) {
+        openapiOutput.textContent = result;
+      }
+    } catch (error) {
+      if (openapiOutput) {
+        openapiOutput.textContent = '// Error: ' + (error instanceof Error ? error.message : String(error));
+      }
+    } finally {
+      convertBtn.textContent = 'Convert';
+      convertBtn.disabled = false;
+    }
+  }
+
+  // Convert button
+  convertBtn?.addEventListener('click', convertArazzo);
+
+  // Load from URL
+  loadUrlBtn?.addEventListener('click', async () => {
+    const url = urlInput?.value?.trim();
+    if (!url) return;
+
+    loadUrlBtn.textContent = 'Loading...';
+    loadUrlBtn.disabled = true;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const content = await response.text();
+      if (arazzoInput) {
+        arazzoInput.value = content;
+      }
+      // Auto-convert after loading
+      await convertArazzo();
+    } catch (error) {
+      if (openapiOutput) {
+        openapiOutput.textContent = '// Error loading URL: ' + (error instanceof Error ? error.message : String(error));
+      }
+    } finally {
+      loadUrlBtn.textContent = 'Load';
+      loadUrlBtn.disabled = false;
+    }
+  });
+
+  // Clear input button
+  clearInputBtn?.addEventListener('click', () => {
+    if (arazzoInput) arazzoInput.value = '';
+    if (openapiOutput) openapiOutput.textContent = '';
+    if (exampleSelect) exampleSelect.value = '';
+  });
+
+  // Copy output button
+  copyOutputBtn?.addEventListener('click', async () => {
+    const text = openapiOutput?.textContent || '';
+    if (!text) return;
+
+    await navigator.clipboard.writeText(text);
+    copyOutputBtn.textContent = 'Copied!';
+    setTimeout(() => {
+      copyOutputBtn.textContent = 'Copy';
+    }, 2000);
+  });
+
+  // Load first example by default
+  if (exampleSelect) {
+    exampleSelect.value = 'simple';
+    exampleSelect.dispatchEvent(new Event('change'));
+  }
+</script>
+
+<style>
+  .converter {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .gh-ribbon {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  .gh-ribbon a {
+    display: block;
+    width: 280px;
+    padding: 0.5rem 0;
+    background: var(--color-primary);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s ease;
+    pointer-events: auto;
+    position: absolute;
+    top: 45px;
+    right: -70px;
+    transform: rotate(45deg);
+  }
+
+  .gh-ribbon a:hover {
+    background: var(--color-primary-hover);
+  }
+
+  @media (max-width: 768px) {
+    .gh-ribbon {
+      display: none;
+    }
+  }
+
+  .header {
+    background: var(--color-primary);
+    color: white;
+    padding: 2rem 0;
+    position: relative;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .header-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .header-logo {
+    height: 3rem;
+    width: auto;
+    filter: brightness(0) invert(1);
+  }
+
+  .arrow {
+    font-size: 2rem;
+    font-weight: 300;
+    opacity: 0.9;
+  }
+
+  @media (max-width: 768px) {
+    .header-logos {
+      gap: 1rem;
+    }
+
+    .header-logo {
+      height: 2rem;
+    }
+
+    .arrow {
+      font-size: 1.5rem;
+    }
+  }
+
+  .title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    text-align: center;
+  }
+
+  .theme-toggle {
+    position: absolute;
+    top: 1rem;
+    left: 1.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+
+  .theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  @media (max-width: 768px) {
+    .theme-toggle {
+      top: 0.5rem;
+      left: 0.5rem;
+    }
+  }
+
+  .sun-icon {
+    display: none;
+  }
+
+  :global(.dark) .sun-icon {
+    display: inline;
+  }
+
+  .moon-icon {
+    display: inline;
+  }
+
+  :global(.dark) .moon-icon {
+    display: none;
+  }
+
+  .main {
+    flex: 1;
+    padding: 2rem 0;
+  }
+
+  .info-banner {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #1a202c;
+  }
+
+  :global(.dark) .info-banner {
+    background: #1e3a5f;
+    border-color: #4a90e2;
+    color: #e2e8f0;
+  }
+
+  .info-banner code {
+    background: var(--color-bg);
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--color-text);
+  }
+
+  .controls-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .controls-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .control-narrow {
+    grid-column: span 1;
+  }
+
+  .control-wide {
+    grid-column: span 1;
+  }
+
+  .control-group label {
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
+  select,
+  input[type="url"] {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 1rem;
+  }
+
+  input[type="url"]::placeholder {
+    color: #a0aec0;
+    opacity: 0.6;
+  }
+
+  :global(.dark) input[type="url"]::placeholder {
+    color: #718096;
+    opacity: 0.6;
+  }
+
+  .url-input-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .url-input-group input {
+    flex: 1;
+  }
+
+  .editor-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 968px) {
+    .editor-container {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .editor-pane {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .pane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--color-code-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .pane-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .pane-logo {
+    height: 2rem;
+    width: auto;
+  }
+
+  .pane-logo-dark {
+    display: none;
+  }
+
+  :global(.dark) .pane-logo-light {
+    display: none;
+  }
+
+  :global(.dark) .pane-logo-dark {
+    display: block;
+    filter: brightness(0) invert(1);
+  }
+
+  .pane-header h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .code-display {
+    flex: 1;
+    min-height: 500px;
+    max-height: 600px;
+    padding: 1rem;
+    margin: 0;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .code-display.editable {
+    resize: vertical;
+  }
+
+  .btn {
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+
+  .btn-secondary {
+    background: var(--color-secondary);
+    color: white;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  .cli-section {
+    border-top: 1px solid var(--color-border);
+    padding-top: 2rem;
+  }
+
+  .cli-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .cli-section > p {
+    margin-bottom: 1.5rem;
+    color: var(--color-secondary);
+  }
+
+  .cli-examples {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .cli-example {
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+  }
+
+  .cli-example h3 {
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+  }
+
+  .cli-example pre {
+    background: var(--color-bg);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+  }
+
+  .cli-example code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .cli-example a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .cli-example a:hover {
+    text-decoration: underline;
+  }
+
+  .footer {
+    background: var(--color-code-bg);
+    padding: 2rem 0;
+    text-align: center;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .footer a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .footer a:hover {
+    text-decoration: underline;
+  }
+</style>

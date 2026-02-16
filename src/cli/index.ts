@@ -15,7 +15,7 @@ program
   .name('arazzo2openapi')
   .description('Convert Arazzo workflow descriptions to OpenAPI documents')
   .version('0.1.0')
-  .argument('<arazzo-file>', 'Path to the Arazzo document (JSON or YAML)')
+  .argument('<arazzo-file>', 'Path or URL to the Arazzo document (JSON or YAML)')
   .option('-o, --output <file>', 'Output file path (default: derived from input)')
   .option('-f, --format <format>', 'Output format: json or yaml (default: match input format)', /^(json|yaml)$/i)
   .option('--openapi-version <version>', 'OpenAPI version: 3.0.0, 3.1.0, or 3.2.0 (default: 3.1.0)', '3.1.0')
@@ -41,15 +41,30 @@ function collectServers(url: string, previous: string[]): string[] {
 }
 
 /**
+ * Check if a string is a remote URL
+ */
+function isRemoteUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+/**
  * Main conversion function
  */
 async function convertArazzoToOpenAPI(arazzoFile: string, options: any): Promise<void> {
-  // Validate input file exists
-  const arazzoPath = path.resolve(arazzoFile);
-  try {
-    await fs.access(arazzoPath);
-  } catch {
-    throw new Error(`Arazzo file not found: ${arazzoPath}`);
+  let arazzoPath: string;
+
+  // Check if input is a remote URL or local file
+  if (isRemoteUrl(arazzoFile)) {
+    // Use URL as-is
+    arazzoPath = arazzoFile;
+  } else {
+    // Validate local file exists
+    arazzoPath = path.resolve(arazzoFile);
+    try {
+      await fs.access(arazzoPath);
+    } catch {
+      throw new Error(`Arazzo file not found: ${arazzoPath}`);
+    }
   }
 
   // Parse Arazzo document
@@ -103,8 +118,24 @@ async function convertArazzoToOpenAPI(arazzoFile: string, options: any): Promise
  * Derive output path from input path if not specified
  */
 function deriveOutputPath(inputPath: string, format: 'json' | 'yaml'): string {
-  const parsed = path.parse(inputPath);
   const extension = format === 'json' ? '.json' : '.yaml';
+
+  // Handle remote URLs
+  if (isRemoteUrl(inputPath)) {
+    try {
+      const url = new URL(inputPath);
+      const urlPath = url.pathname;
+      const filename = urlPath.split('/').pop() || 'arazzo';
+      const basename = filename.replace(/\.(json|yaml|yml)$/i, '');
+      return `${basename}.openapi${extension}`;
+    } catch {
+      // If URL parsing fails, use a default name
+      return `arazzo.openapi${extension}`;
+    }
+  }
+
+  // Handle local file paths
+  const parsed = path.parse(inputPath);
   return path.join(parsed.dir, `${parsed.name}.openapi${extension}`);
 }
 

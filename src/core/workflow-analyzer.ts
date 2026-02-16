@@ -52,6 +52,7 @@ export interface WorkflowStep {
   description?: string;
   operationId?: string;
   operationPath?: string;
+  outputs?: Record<string, string>; // Map of output name to runtime expression
 }
 
 /**
@@ -258,11 +259,19 @@ export class WorkflowAnalyzer {
         const operationId = step.get('operationId')?.toValue() as string | undefined;
         const operationPath = step.get('operationPath')?.toValue() as string | undefined;
 
+        // Extract step outputs
+        const outputsElement = step.get('outputs');
+        let outputs: Record<string, string> | undefined;
+        if (outputsElement) {
+          outputs = outputsElement.toValue() as Record<string, string>;
+        }
+
         analyzedSteps.push({
           stepId,
           description,
           operationId,
           operationPath,
+          outputs,
         });
       }
     }

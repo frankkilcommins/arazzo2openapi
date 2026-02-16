@@ -1,0 +1,30 @@
+{
+  "arazzo": "1.0.0",
+  "info": {
+    "title": "Test Workflow",
+    "version": "1.0.0"
+  },
+  "sourceDescriptions": [
+    {
+      "name": "shopAPI",
+      "type": "openapi",
+      "url": "./openapi-sources/shop-api-3.1.json"
+    },
+    {
+      "name": "legacyAPI",
+      "type": "openapi",
+      "url": "./openapi-sources/legacy-api-3.0.yaml"
+    }
+  ],
+  "workflows": [
+    {
+      "workflowId": "getProductWorkflow",
+      "steps": [
+        {
+          "stepId": "fetchProduct",
+          "operationId": "shopAPI.getProduct"
+        }
+      ]
+    }
+  ]
+}

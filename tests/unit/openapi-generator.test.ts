@@ -471,7 +471,7 @@ describe('OpenAPIGenerator', () => {
       expect(properties?.get('productPrice')).toBeDefined();
     });
 
-    it('should include runtime expressions in output field descriptions', async () => {
+    it('should infer types from runtime expressions', async () => {
       const filePath = path.join(__dirname, '../fixtures/arazzo/simple-workflow.yaml');
       const { document } = await parser.loadDocument(filePath);
       const workflows = analyzer.analyzeAllWorkflows(document);
@@ -494,10 +494,14 @@ describe('OpenAPIGenerator', () => {
         ?.get('schema');
 
       const properties = schema?.get('properties');
-      const productNameSchema = properties?.get('productName');
-      const description = productNameSchema?.get('description')?.toValue();
 
-      expect(description).toContain('$steps.fetchProduct.outputs.name');
+      // Check that productName has inferred string type
+      const productNameSchema = properties?.get('productName');
+      expect(productNameSchema?.get('type')?.toValue()).toBe('string');
+
+      // Check that productPrice has inferred number type
+      const productPriceSchema = properties?.get('productPrice');
+      expect(productPriceSchema?.get('type')?.toValue()).toBe('number');
     });
 
     it('should mark all output fields as required', async () => {

@@ -172,7 +172,6 @@ export class MetadataDeriver {
 
     const servers: ServerConfig[] = [];
     const seenUrls = new Set<string>();
-    const arazzoDir = path.dirname(arazzoDocPath);
 
     for (let i = 0; i < sourceDescriptions.length; i++) {
       const sourceDesc = sourceDescriptions.get(i);
@@ -194,7 +193,7 @@ export class MetadataDeriver {
         }
 
         try {
-          const openApiDoc = await this.loadOpenAPIDocument(url, arazzoDir);
+          const openApiDoc = await this.loadOpenAPIDocument(url, arazzoDocPath);
           const serversElement = openApiDoc.servers;
 
           if (serversElement) {
@@ -232,22 +231,47 @@ export class MetadataDeriver {
   }
 
   /**
-   * Load an OpenAPI document from a URL (file path)
+   * Load an OpenAPI document from a URL (file path or remote URL)
    */
-  private async loadOpenAPIDocument(url: string, baseDir: string): Promise<OpenApi3_1Element> {
+  private async loadOpenAPIDocument(url: string, arazzoDocPath: string): Promise<OpenApi3_1Element> {
     // Check cache first
     if (this.sourceDescriptionCache.has(url)) {
       return this.sourceDescriptionCache.get(url)!;
     }
 
-    // Resolve relative path
-    const resolvedPath = path.resolve(baseDir, url);
+    let content: string;
+    let resourcePath: string;
 
-    // Read file
-    const content = await fs.readFile(resolvedPath, 'utf-8');
+    // Check if URL is remote or local
+    if (this.isRemoteUrl(url)) {
+      // Absolute remote URL - fetch directly
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      content = await response.text();
+      resourcePath = url;
+    } else {
+      // Relative URL - resolve relative to Arazzo document location
+      if (this.isRemoteUrl(arazzoDocPath)) {
+        // Arazzo is remote, resolve relative URL
+        const resolvedUrl = new URL(url, arazzoDocPath).href;
+        const response = await fetch(resolvedUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        content = await response.text();
+        resourcePath = resolvedUrl;
+      } else {
+        // Arazzo is local file, resolve relative file path
+        const baseDir = path.dirname(arazzoDocPath);
+        resourcePath = path.resolve(baseDir, url);
+        content = await fs.readFile(resourcePath, 'utf-8');
+      }
+    }
 
     // Detect format and parse
-    const format = this.detectOpenAPIFormat(resolvedPath);
+    const format = this.detectOpenAPIFormat(resourcePath);
     let parseResult;
 
     if (format === 'json') {
@@ -256,12 +280,19 @@ export class MetadataDeriver {
       parseResult = await parseOpenApiYaml(content);
     }
 
-    const document = parseResult.result as OpenApi3_1Element;
+    const document = parseResult.result as unknown as OpenApi3_1Element;
 
     // Cache the result
     this.sourceDescriptionCache.set(url, document);
 
     return document;
+  }
+
+  /**
+   * Check if a URL is remote (http:// or https://)
+   */
+  private isRemoteUrl(url: string): boolean {
+    return url.startsWith('http://') || url.startsWith('https://');
   }
 
   /**

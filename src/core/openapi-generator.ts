@@ -17,15 +17,18 @@ import { ArazzoSpecification1Element } from '@speclynx/apidom-ns-arazzo-1';
 import { GenerationConfig, ServerConfig } from '../types/config';
 import { AnalyzedWorkflow, WorkflowInputs } from '../core/workflow-analyzer';
 import { MetadataDeriver } from './metadata-deriver';
+import { TypeInferenceEngine } from './type-inference-engine';
 
 /**
  * Generates OpenAPI 3.1 documents from analyzed Arazzo workflows
  */
 export class OpenAPIGenerator {
   private metadataDeriver: MetadataDeriver;
+  private typeInferenceEngine: TypeInferenceEngine;
 
   constructor() {
     this.metadataDeriver = new MetadataDeriver();
+    this.typeInferenceEngine = new TypeInferenceEngine();
   }
 
   /**
@@ -57,7 +60,7 @@ export class OpenAPIGenerator {
     }
 
     // Generate paths from workflows
-    const paths = this.generatePaths(workflows, config);
+    const paths = await this.generatePaths(workflows, config, arazzoDoc, arazzoDocPath);
     openapi.set('paths', paths);
 
     return openapi;
@@ -100,12 +103,17 @@ export class OpenAPIGenerator {
   /**
    * Generate PathsElement with POST operations for each workflow
    */
-  private generatePaths(workflows: AnalyzedWorkflow[], config: GenerationConfig): PathsElement {
+  private async generatePaths(
+    workflows: AnalyzedWorkflow[],
+    config: GenerationConfig,
+    arazzoDoc: ArazzoSpecification1Element,
+    arazzoDocPath: string
+  ): Promise<PathsElement> {
     const paths = new PathsElement();
 
     for (const workflow of workflows) {
       const path = `/workflows/${workflow.workflowId}`;
-      const pathItem = this.createPathItem(workflow, config);
+      const pathItem = await this.createPathItem(workflow, config, arazzoDoc, arazzoDocPath);
       paths.set(path, pathItem);
     }
 
@@ -115,9 +123,14 @@ export class OpenAPIGenerator {
   /**
    * Create a PathItemElement with POST operation for a workflow
    */
-  private createPathItem(workflow: AnalyzedWorkflow, config: GenerationConfig): PathItemElement {
+  private async createPathItem(
+    workflow: AnalyzedWorkflow,
+    config: GenerationConfig,
+    arazzoDoc: ArazzoSpecification1Element,
+    arazzoDocPath: string
+  ): Promise<PathItemElement> {
     const pathItem = new PathItemElement();
-    const operation = this.createOperation(workflow, config);
+    const operation = await this.createOperation(workflow, config, arazzoDoc, arazzoDocPath);
     pathItem.set('post', operation);
     return pathItem;
   }
@@ -125,7 +138,12 @@ export class OpenAPIGenerator {
   /**
    * Create an OperationElement for a workflow
    */
-  private createOperation(workflow: AnalyzedWorkflow, config: GenerationConfig): OperationElement {
+  private async createOperation(
+    workflow: AnalyzedWorkflow,
+    config: GenerationConfig,
+    arazzoDoc: ArazzoSpecification1Element,
+    arazzoDocPath: string
+  ): Promise<OperationElement> {
     const operation = new OperationElement();
 
     // Set operation ID
@@ -149,7 +167,7 @@ export class OpenAPIGenerator {
     }
 
     // Set responses
-    const responses = this.createResponses(workflow, config);
+    const responses = await this.createResponses(workflow, config, arazzoDoc, arazzoDocPath);
     operation.set('responses', responses);
 
     return operation;
@@ -245,10 +263,14 @@ export class OpenAPIGenerator {
   }
 
   /**
-   * Create ResponsesElement with placeholder response schemas
-   * Note: Full type inference for outputs will be implemented in Phase 2
+   * Create ResponsesElement with inferred type schemas
    */
-  private createResponses(workflow: AnalyzedWorkflow, config: GenerationConfig): ResponsesElement {
+  private async createResponses(
+    workflow: AnalyzedWorkflow,
+    config: GenerationConfig,
+    arazzoDoc: ArazzoSpecification1Element,
+    arazzoDocPath: string
+  ): Promise<ResponsesElement> {
     const responses = new ResponsesElement();
 
     // Use configured response code or default to 200
@@ -260,14 +282,19 @@ export class OpenAPIGenerator {
       new StringElement(`Workflow ${workflow.workflowId} executed successfully`)
     );
 
-    // If workflow has outputs, create a placeholder schema
+    // If workflow has outputs, infer types and create schema
     if (workflow.outputs && Object.keys(workflow.outputs.fields).length > 0) {
       const content = new ObjectElement();
       const mediaType = new MediaTypeElement();
 
-      // Create placeholder schema with output field names
-      const schema = this.createPlaceholderOutputSchema(workflow);
-      mediaType.set('schema', schema);
+      // Use TypeInferenceEngine to infer types from runtime expressions
+      const inferenceResult = await this.typeInferenceEngine.inferOutputSchema(
+        workflow,
+        arazzoDoc,
+        arazzoDocPath
+      );
+
+      mediaType.set('schema', inferenceResult.schema);
 
       content.set('application/json', mediaType);
       response.set('content', content);
@@ -279,43 +306,10 @@ export class OpenAPIGenerator {
   }
 
   /**
-   * Create a placeholder schema for workflow outputs
-   * In Phase 2, this will be replaced with inferred types from runtime expressions
-   */
-  private createPlaceholderOutputSchema(workflow: AnalyzedWorkflow): SchemaElement {
-    const schema = new SchemaElement();
-    schema.set('type', new StringElement('object'));
-
-    const properties = new ObjectElement();
-    const required = new ArrayElement();
-
-    // Add each output field as a string placeholder
-    for (const [fieldName, outputField] of Object.entries(workflow.outputs?.fields || {})) {
-      const fieldSchema = new SchemaElement();
-      fieldSchema.set('type', new StringElement('string'));
-
-      // Add description with the runtime expression
-      fieldSchema.set(
-        'description',
-        new StringElement(`Output from runtime expression: ${outputField.expression}`)
-      );
-
-      properties.set(fieldName, fieldSchema);
-      required.push(new StringElement(fieldName));
-    }
-
-    schema.set('properties', properties);
-    if (required.length > 0) {
-      schema.set('required', required);
-    }
-
-    return schema;
-  }
-
-  /**
-   * Clear the metadata deriver cache
+   * Clear all caches
    */
   clearCache(): void {
     this.metadataDeriver.clearCache();
+    this.typeInferenceEngine.clearCache();
   }
 }
