@@ -63,7 +63,7 @@
     "@swaggerexpert/arazzo-runtime-expression": "^2.0.3",
     "chalk": "^5.0.0",
     "commander": "^11.0.0",
-    "inquirer": "^9.0.0",
+    "inquirer": "^13.3.0",
     "ora": "^7.0.0",
     "yaml": "^2.8.2"
   },
