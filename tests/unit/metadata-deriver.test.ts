@@ -307,10 +307,21 @@ describe('MetadataDeriver', () => {
       const { document } = await parser.loadDocument(filePath);
 
       // Modify source description URL to non-existent file
-      const sourceDesc = document.sourceDescriptions?.get(0);
-      if (sourceDesc) {
-        const { StringElement } = await import('@speclynx/apidom-core');
-        sourceDesc.set('url', new StringElement('../openapi/non-existent.yaml'));
+      const sourceDescriptions = document.sourceDescriptions;
+      if (sourceDescriptions && (sourceDescriptions as any).length > 0) {
+        const sourceDesc = (sourceDescriptions as any).get(0);
+        if (sourceDesc) {
+          // Replace the first source description with one pointing to non-existent file
+          const sourceDescValue = sourceDesc.toValue();
+          const { SourceDescriptionElement } = await import('@speclynx/apidom-ns-arazzo-1');
+          const newSourceDesc = new SourceDescriptionElement({
+            ...sourceDescValue,
+            url: '../openapi/non-existent.yaml'
+          });
+          // Remove old and add new
+          (sourceDescriptions as any).remove(0);
+          (sourceDescriptions as any).unshift(newSourceDesc);
+        }
       }
 
       const config: GenerationConfig = {

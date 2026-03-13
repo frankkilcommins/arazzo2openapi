@@ -6,6 +6,7 @@ import { AnalyzedWorkflow } from './workflow-analyzer';
 import { SourceDocumentResolver } from './source-document-resolver';
 import { InferredType } from '../types/runtime-expression';
 import { ArazzoSpecification1Element } from '@speclynx/apidom-ns-arazzo-1';
+import { isObjectElement, isArrayElement } from '@speclynx/apidom-datamodel';
 
 export class TypeResolver {
   /**
@@ -42,14 +43,20 @@ export class TypeResolver {
     } else {
       // No prefix - use first (or only) source description
       const sourceDescriptions = arazzoDoc.get('sourceDescriptions');
-      if (!sourceDescriptions || sourceDescriptions.length === 0) {
+      if (!sourceDescriptions || !isArrayElement(sourceDescriptions) || sourceDescriptions.length === 0) {
         return this.getFallbackType(
           `No source descriptions found in Arazzo document`,
           'low'
         );
       }
       const firstSource = sourceDescriptions.get(0);
-      const nameElement = firstSource?.get?.('name');
+      if (!isObjectElement(firstSource)) {
+        return this.getFallbackType(
+          `First source description is not an object`,
+          'low'
+        );
+      }
+      const nameElement = firstSource.get('name');
       sourceName = nameElement?.toValue() as string;
       if (!sourceName) {
         return this.getFallbackType(

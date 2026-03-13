@@ -3,6 +3,7 @@ import {
   WorkflowElement,
   StepElement,
 } from '@speclynx/apidom-ns-arazzo-1';
+import { isArrayElement } from '@speclynx/apidom-datamodel';
 import { WorkflowAnalysisError } from '../types/errors';
 
 /**
@@ -128,7 +129,7 @@ export class WorkflowAnalyzer {
     const description = this.getDescription(workflow);
 
     const steps = workflow.get('steps');
-    const stepCount = steps ? steps.length : 0;
+    const stepCount = steps && isArrayElement(steps) ? steps.length : 0;
 
     const inputs = workflow.get('inputs');
     const hasInputs = !!inputs;
@@ -243,7 +244,7 @@ export class WorkflowAnalyzer {
    */
   private analyzeSteps(workflow: WorkflowElement): WorkflowStep[] {
     const steps = workflow.get('steps');
-    if (!steps) {
+    if (!steps || !isArrayElement(steps)) {
       return [];
     }
 

@@ -5,6 +5,7 @@ import {
 import { parse as parseOpenApiJson } from '@speclynx/apidom-parser-adapter-openapi-json-3-1';
 import { parse as parseOpenApiYaml } from '@speclynx/apidom-parser-adapter-openapi-yaml-3-1';
 import { OpenApi3_1Element } from '@speclynx/apidom-ns-openapi-3-1';
+import { isObjectElement } from '@speclynx/apidom-datamodel';
 import { AnalyzedWorkflow } from './workflow-analyzer';
 import { GenerationConfig, ServerConfig } from '../types/config';
 import * as fs from 'fs/promises';
@@ -199,13 +200,15 @@ export class MetadataDeriver {
           if (serversElement) {
             for (let j = 0; j < serversElement.length; j++) {
               const server = serversElement.get(j);
-              const serverUrlElement = server?.get?.('url');
+              if (!isObjectElement(server)) continue;
+
+              const serverUrlElement = server.get('url');
               const serverUrl = serverUrlElement?.toValue?.() as string;
 
               if (serverUrl && !seenUrls.has(serverUrl)) {
                 seenUrls.add(serverUrl);
 
-                const descElement = server?.get?.('description');
+                const descElement = server.get('description');
                 const description =
                   (descElement?.toValue?.() as string) || `Server from ${name}`;
 

@@ -301,7 +301,7 @@ describe('WorkflowAnalyzer', () => {
     it('should handle workflow without operationIds', async () => {
       // Create a minimal workflow with steps but no operationIds
       const { WorkflowElement: WE, StepElement } = await import('@speclynx/apidom-ns-arazzo-1');
-      const { ArrayElement } = await import('@speclynx/apidom-core');
+      const { ArrayElement } = await import('@speclynx/apidom-datamodel');
 
       const step1 = new StepElement({ stepId: 'step1', operationPath: '/some/path' });
       const steps = new ArrayElement([step1]);

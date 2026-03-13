@@ -30,7 +30,11 @@ describe('SourceDocumentResolver', () => {
 
       expect(document).toBeDefined();
       expect(document.get('openapi')?.toValue()).toBe('3.1.0');
-      expect(document.get('info')?.get('title')?.toValue()).toBe('Shop API');
+      const info = (document as any).get('info');
+      expect(info).toBeDefined();
+      // Use toValue() instead of chaining .get() calls since we test OpenAPI elements directly
+      const infoValue = info?.toValue() as any;
+      expect(infoValue?.title).toBe('Shop API');
     });
 
     it('should resolve OpenAPI 3.0 YAML document', async () => {
@@ -40,7 +44,10 @@ describe('SourceDocumentResolver', () => {
 
       expect(document).toBeDefined();
       expect(document.get('openapi')?.toValue()).toBe('3.0.3');
-      expect(document.get('info')?.get('title')?.toValue()).toBe('Legacy API');
+      const info = (document as any).get('info');
+      expect(info).toBeDefined();
+      const infoValue = info?.toValue() as any;
+      expect(infoValue?.title).toBe('Legacy API');
     });
 
     it('should cache resolved documents', async () => {
@@ -66,10 +73,18 @@ describe('SourceDocumentResolver', () => {
 
       // Manually create a source description pointing to non-existent file
       const sourceDescriptions = arazzoDoc.get('sourceDescriptions');
-      const badSource = sourceDescriptions.content[0].clone();
-      badSource.set('name', 'badAPI');
-      badSource.set('url', './non-existent.json');
-      sourceDescriptions.content.push(badSource);
+      if (!sourceDescriptions || !(sourceDescriptions as any).get) throw new Error('sourceDescriptions not found');
+      const firstSource = (sourceDescriptions as any).get(0);
+      if (!firstSource) throw new Error('firstSource not found');
+      // In v4, clone() might not exist - create new element by converting to value and back
+      const firstSourceValue = firstSource.toValue();
+      const { SourceDescriptionElement } = await import('@speclynx/apidom-ns-arazzo-1');
+      const badSource = new SourceDescriptionElement({
+        ...firstSourceValue,
+        name: 'badAPI',
+        url: './non-existent.json'
+      });
+      (sourceDescriptions as any).push(badSource);
 
       await expect(
         resolver.resolveSourceDocument('badAPI', arazzoDoc, arazzoPath)
@@ -81,10 +96,18 @@ describe('SourceDocumentResolver', () => {
 
       // Manually create a source description with unsupported type
       const sourceDescriptions = arazzoDoc.get('sourceDescriptions');
-      const badSource = sourceDescriptions.content[0].clone();
-      badSource.set('name', 'graphqlAPI');
-      badSource.set('type', 'graphql');
-      sourceDescriptions.content.push(badSource);
+      if (!sourceDescriptions || !(sourceDescriptions as any).get) throw new Error('sourceDescriptions not found');
+      const firstSource = (sourceDescriptions as any).get(0);
+      if (!firstSource) throw new Error('firstSource not found');
+      // In v4, clone() might not exist - create new element by converting to value and back
+      const firstSourceValue = firstSource.toValue();
+      const { SourceDescriptionElement } = await import('@speclynx/apidom-ns-arazzo-1');
+      const badSource = new SourceDescriptionElement({
+        ...firstSourceValue,
+        name: 'graphqlAPI',
+        type: 'graphql'
+      });
+      (sourceDescriptions as any).push(badSource);
 
       await expect(
         resolver.resolveSourceDocument('graphqlAPI', arazzoDoc, arazzoPath)
@@ -178,7 +201,9 @@ describe('SourceDocumentResolver', () => {
       const document = await resolver.resolveSourceDocument('shopAPI', arazzoDoc, arazzoPath);
 
       expect(document).toBeDefined();
-      expect(document.get('info')?.get('title')?.toValue()).toBe('Shop API');
+      const info = (document as any).get('info');
+      const infoValue = info?.toValue() as any;
+      expect(infoValue?.title).toBe('Shop API');
     });
   });
 });

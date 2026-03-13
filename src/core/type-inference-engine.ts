@@ -15,7 +15,7 @@ import {
   StringElement,
   NumberElement,
   BooleanElement,
-} from '@speclynx/apidom-core';
+} from '@speclynx/apidom-datamodel';
 
 export class TypeInferenceEngine {
   private expressionParser: RuntimeExpressionParser;
