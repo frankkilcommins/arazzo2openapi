@@ -27,70 +27,149 @@ export class TypeResolver {
       return this.getFallbackType(`Step "${stepId}" not found in workflow`, 'low');
     }
 
-    // Parse operationId (format: "sourceName.operationId" or just "operationId")
-    if (!step.operationId) {
-      return this.getFallbackType(`Step "${stepId}" has no operationId`, 'low');
+    // Steps can reference operations via operationId OR operationPath
+    if (!step.operationId && !step.operationPath) {
+      return this.getFallbackType(`Step "${stepId}" has no operationId or operationPath`, 'low');
     }
 
     let sourceName: string;
-    let opId: string;
-
-    // Check if operationId includes source name prefix
-    if (step.operationId.includes('.')) {
-      const operationIdParts = step.operationId.split('.');
-      sourceName = operationIdParts[0];
-      opId = operationIdParts.slice(1).join('.'); // Handle operationIds with dots
-    } else {
-      // No prefix - use first (or only) source description
-      const sourceDescriptions = arazzoDoc.get('sourceDescriptions');
-      if (!sourceDescriptions || !isArrayElement(sourceDescriptions) || sourceDescriptions.length === 0) {
-        return this.getFallbackType(
-          `No source descriptions found in Arazzo document`,
-          'low'
-        );
-      }
-      const firstSource = sourceDescriptions.get(0);
-      if (!isObjectElement(firstSource)) {
-        return this.getFallbackType(
-          `First source description is not an object`,
-          'low'
-        );
-      }
-      const nameElement = firstSource.get('name');
-      sourceName = nameElement?.toValue() as string;
-      if (!sourceName) {
-        return this.getFallbackType(
-          `First source description has no name`,
-          'low'
-        );
-      }
-      opId = step.operationId;
-    }
-
-    // Resolve source document
+    let opId: string | undefined;
+    let operation: any;
     let openapiDoc: any;
-    try {
-      openapiDoc = await sourceResolver.resolveSourceDocument(
-        sourceName,
-        arazzoDoc,
-        arazzoDocPath
-      );
-    } catch (error) {
-      return this.getFallbackType(
-        `Could not resolve source document "${sourceName}": ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        'low'
-      );
-    }
 
-    // Find operation
-    const operation = sourceResolver.findOperationByOperationId(openapiDoc, opId);
-    if (!operation) {
-      return this.getFallbackType(
-        `Operation "${opId}" not found in source "${sourceName}"`,
-        'medium'
-      );
+    // Handle operationPath (JSON Pointer reference)
+    if (step.operationPath) {
+      // operationPath format: "{$sourceDescriptions.sourceName.url}#/paths/~1pet~1findByStatus"
+      // or just: "#/paths/~1pet~1findByStatus" (uses first source)
+      const operationPath = step.operationPath;
+
+      // Extract source name from runtime expression if present
+      const runtimeExprMatch = operationPath.match(/\{\$sourceDescriptions\.([^.}]+)/);
+      if (runtimeExprMatch) {
+        sourceName = runtimeExprMatch[1];
+      } else {
+        // No source name in expression - use first source description
+        const sourceDescriptions = arazzoDoc.get('sourceDescriptions');
+        if (!sourceDescriptions || !isArrayElement(sourceDescriptions) || sourceDescriptions.length === 0) {
+          return this.getFallbackType(
+            `No source descriptions found in Arazzo document`,
+            'low'
+          );
+        }
+        const firstSource = sourceDescriptions.get(0);
+        if (!isObjectElement(firstSource)) {
+          return this.getFallbackType(
+            `First source description is not an object`,
+            'low'
+          );
+        }
+        const nameElement = firstSource.get('name');
+        sourceName = nameElement?.toValue() as string;
+        if (!sourceName) {
+          return this.getFallbackType(
+            `First source description has no name`,
+            'low'
+          );
+        }
+      }
+
+      // Extract JSON Pointer (everything after #)
+      const pointerMatch = operationPath.match(/#(.+)$/);
+      if (!pointerMatch) {
+        return this.getFallbackType(
+          `Invalid operationPath format: ${operationPath}`,
+          'low'
+        );
+      }
+      const jsonPointer = pointerMatch[1];
+
+      // Resolve source document
+      let openapiDoc: any;
+      try {
+        openapiDoc = await sourceResolver.resolveSourceDocument(
+          sourceName,
+          arazzoDoc,
+          arazzoDocPath
+        );
+      } catch (error) {
+        return this.getFallbackType(
+          `Could not resolve source document "${sourceName}": ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          'low'
+        );
+      }
+
+      // Navigate the JSON Pointer to find the operation
+      // JSON Pointer format: /paths/~1pet~1findByStatus/get
+      // ~1 is escaped /,  ~0 is escaped ~
+      operation = this.resolveJsonPointer(openapiDoc, jsonPointer);
+
+      if (!operation) {
+        return this.getFallbackType(
+          `Could not resolve operationPath: ${operationPath}`,
+          'medium'
+        );
+      }
+    }
+    // Handle operationId
+    else if (step.operationId) {
+      // Parse operationId (format: "sourceName.operationId" or just "operationId")
+      if (step.operationId.includes('.')) {
+        const operationIdParts = step.operationId.split('.');
+        sourceName = operationIdParts[0];
+        opId = operationIdParts.slice(1).join('.'); // Handle operationIds with dots
+      } else {
+        // No prefix - use first (or only) source description
+        const sourceDescriptions = arazzoDoc.get('sourceDescriptions');
+        if (!sourceDescriptions || !isArrayElement(sourceDescriptions) || sourceDescriptions.length === 0) {
+          return this.getFallbackType(
+            `No source descriptions found in Arazzo document`,
+            'low'
+          );
+        }
+        const firstSource = sourceDescriptions.get(0);
+        if (!isObjectElement(firstSource)) {
+          return this.getFallbackType(
+            `First source description is not an object`,
+            'low'
+          );
+        }
+        const nameElement = firstSource.get('name');
+        sourceName = nameElement?.toValue() as string;
+        if (!sourceName) {
+          return this.getFallbackType(
+            `First source description has no name`,
+            'low'
+          );
+        }
+        opId = step.operationId;
+      }
+
+      // Resolve source document
+      try {
+        openapiDoc = await sourceResolver.resolveSourceDocument(
+          sourceName,
+          arazzoDoc,
+          arazzoDocPath
+        );
+      } catch (error) {
+        return this.getFallbackType(
+          `Could not resolve source document "${sourceName}": ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          'low'
+        );
+      }
+
+      // Find operation by operationId
+      operation = sourceResolver.findOperationByOperationId(openapiDoc, opId);
+      if (!operation) {
+        return this.getFallbackType(
+          `Operation "${opId}" not found in source "${sourceName}"`,
+          'medium'
+        );
+      }
     }
 
     // Get response schema
@@ -456,5 +535,40 @@ export class TypeResolver {
     if (maxItems !== undefined) inferredType.maxItems = maxItems;
 
     return inferredType;
+  }
+
+  /**
+   * Resolve a JSON Pointer (RFC 6901) in an OpenAPI document
+   * Example: /paths/~1pet~1findByStatus/get
+   * ~0 = ~ (tilde), ~1 = / (slash)
+   */
+  private resolveJsonPointer(document: any, pointer: string): any {
+    if (!pointer || pointer === '') {
+      return document;
+    }
+
+    // Remove leading slash if present
+    const segments = pointer.replace(/^\//, '').split('/');
+
+    let current = document;
+    for (const segment of segments) {
+      if (!current) return null;
+
+      // Unescape JSON Pointer tokens: ~1 = /, ~0 = ~
+      const unescaped = segment.replace(/~1/g, '/').replace(/~0/g, '~');
+
+      // Navigate into the document
+      if (isObjectElement(current)) {
+        current = current.get(unescaped);
+      } else if (typeof current.get === 'function') {
+        current = current.get(unescaped);
+      } else if (typeof current === 'object' && current !== null) {
+        current = current[unescaped];
+      } else {
+        return null;
+      }
+    }
+
+    return current;
   }
 }
