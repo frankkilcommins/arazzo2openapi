@@ -177,4 +177,39 @@ workflows:
       }
     }
   });
+
+  it('should handle operationPath (JSON Pointer) references correctly', async () => {
+    // Test that operationPath works the same as operationId for type inference
+    const filePath = path.join(__dirname, '../fixtures/arazzo/operation-path-workflow.yaml');
+    const { document } = await parser.loadDocument(filePath);
+    const workflows = analyzer.analyzeAllWorkflows(document);
+
+    const config: GenerationConfig = {
+      arazzoPath: filePath,
+      outputPath: 'output.yaml',
+      openapiVersion: '3.1.0',
+    };
+
+    const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
+    const openapiObj = toValue(openapi) as any;
+
+    const schema = openapiObj.paths['/workflows/getProductViaPath'].post.responses['200'].content['application/json'].schema;
+
+    // Verify properties are objects with proper types, not raw expressions
+    expect(schema.properties).toBeDefined();
+    expect(typeof schema.properties.productName).toBe('object');
+    expect(typeof schema.properties.productPrice).toBe('object');
+
+    // Verify correct types were inferred
+    expect(schema.properties.productName.type).toBe('string');
+    expect(schema.properties.productPrice.type).toBe('number');
+
+    // Explicitly check they are NOT raw expressions
+    expect(schema.properties.productName).not.toEqual('$steps.fetchProduct.outputs.name');
+    expect(schema.properties.productPrice).not.toEqual('$steps.fetchProduct.outputs.price');
+
+    // Check there are no raw expressions anywhere in the schema
+    const rawExpressionFound = containsRawExpression(schema);
+    expect(rawExpressionFound).toBeNull();
+  });
 });

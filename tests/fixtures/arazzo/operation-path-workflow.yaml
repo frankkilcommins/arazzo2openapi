@@ -1,0 +1,29 @@
+arazzo: 1.0.0
+info:
+  title: Test Workflow with operationPath
+  version: 1.0.0
+sourceDescriptions:
+  - name: petStoreAPI
+    url: ../openapi/test-api.yaml
+    type: openapi
+workflows:
+  - workflowId: getProductViaPath
+    summary: Test operationPath reference
+    inputs:
+      type: object
+      properties:
+        productId:
+          type: string
+      required:
+        - productId
+    steps:
+      - stepId: fetchProduct
+        # Using operationPath instead of operationId
+        operationPath: '{$sourceDescriptions.petStoreAPI.url}#/paths/~1products~1{id}/get'
+        parameters:
+          - name: id
+            in: path
+            value: $inputs.productId
+    outputs:
+      productName: $steps.fetchProduct.outputs.name
+      productPrice: $steps.fetchProduct.outputs.price

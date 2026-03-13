@@ -1,5 +1,6 @@
 ---
 // This component will be hydrated on the client
+import { version } from '../../../package.json';
 ---
 
 <div class="converter">
@@ -20,6 +21,12 @@
       </div>
       <h1 class="title">Convert Arazzo Workflow Documents to OpenAPI Documents</h1>
       <p class="subtitle">arazzo2openapi Converter</p>
+      <div class="sponsor-bottom">
+        <a href="https://jentic.com" target="_blank" rel="noopener" class="sponsor-badge">
+          <span class="sponsor-text">Sponsored by</span>
+          <img src="/arazzo2openapi/logos/jentic-white.svg" alt="Jentic" class="sponsor-logo" />
+        </a>
+      </div>
     </div>
   </header>
 
@@ -111,7 +118,7 @@ arazzo2openapi https://example.com/workflow.yaml -o openapi.yaml</code></pre>
   <footer class="footer">
     <div class="container">
       <p>
-        Built with <a href="https://github.com/frankkilcommins/arazzo2openapi" target="_blank">arazzo2openapi</a> v1.0.0
+        Built with <a href="https://github.com/frankkilcommins/arazzo2openapi" target="_blank">arazzo2openapi</a> v{version}
       </p>
     </div>
   </footer>
@@ -549,7 +556,7 @@ paths:
   .header {
     background: var(--color-primary);
     color: white;
-    padding: 2rem 0;
+    padding: 1.5rem 0;
     position: relative;
   }
 
@@ -604,6 +611,39 @@ paths:
     font-size: 1.125rem;
     opacity: 0.9;
     text-align: center;
+  }
+
+  .sponsor-bottom {
+    text-align: center;
+    padding: 0.75rem 0 0 0;
+  }
+
+  .sponsor-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 1rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .sponsor-badge:hover {
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-1px);
+  }
+
+  .sponsor-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .sponsor-logo {
+    height: 18px;
+    width: auto;
   }
 
   .theme-toggle {
