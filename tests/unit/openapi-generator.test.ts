@@ -2,7 +2,19 @@ import { OpenAPIGenerator } from '../../src/core/openapi-generator';
 import { ArazzoParser } from '../../src/core/arazzo-parser';
 import { WorkflowAnalyzer } from '../../src/core/workflow-analyzer';
 import { GenerationConfig } from '../../src/types/config';
+import { isObjectElement } from '@speclynx/apidom-datamodel';
 import * as path from 'path';
+
+// Helper to safely navigate nested element properties in tests
+function getNestedElement(parent: any, ...keys: (string | number)[]): any {
+  let current = parent;
+  for (const key of keys) {
+    if (!current) return undefined;
+    current = current.get?.(key);
+    // Continue navigation even if not an ObjectElement (might be other element types)
+  }
+  return current;
+}
 
 describe('OpenAPIGenerator', () => {
   let generator: OpenAPIGenerator;
@@ -37,7 +49,7 @@ describe('OpenAPIGenerator', () => {
       expect(openapi.get('openapi')?.toValue()).toBe('3.1.0');
       expect(openapi.get('info')).toBeDefined();
       expect(openapi.get('paths')).toBeDefined();
-      expect(openapi.get('info')?.get('x-arazzo-document')?.toValue()).toBe(filePath);
+      expect(getNestedElement(openapi, 'info','x-arazzo-document')?.toValue()).toBe(filePath);
     });
 
     it('should include derived info metadata', async () => {
@@ -54,9 +66,9 @@ describe('OpenAPIGenerator', () => {
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
       const info = openapi.get('info');
 
-      expect(info?.get('title')?.toValue()).toBe('Simple E-Commerce Workflow');
-      expect(info?.get('version')?.toValue()).toBe('1.0.0');
-      expect(info?.get('description')?.toValue()).toBe('A simple workflow for testing');
+      expect(getNestedElement(info,'title')?.toValue()).toBe('Simple E-Commerce Workflow');
+      expect(getNestedElement(info,'version')?.toValue()).toBe('1.0.0');
+      expect(getNestedElement(info,'description')?.toValue()).toBe('A simple workflow for testing');
     });
 
     it('should use CLI overrides for info', async () => {
@@ -76,9 +88,9 @@ describe('OpenAPIGenerator', () => {
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
       const info = openapi.get('info');
 
-      expect(info?.get('title')?.toValue()).toBe('Custom API Title');
-      expect(info?.get('version')?.toValue()).toBe('2.0.0');
-      expect(info?.get('description')?.toValue()).toBe('Custom description');
+      expect(getNestedElement(info,'title')?.toValue()).toBe('Custom API Title');
+      expect(getNestedElement(info,'version')?.toValue()).toBe('2.0.0');
+      expect(getNestedElement(info,'description')?.toValue()).toBe('Custom description');
     });
 
     it('should include derived servers', async () => {
@@ -96,9 +108,9 @@ describe('OpenAPIGenerator', () => {
       const servers = openapi.get('servers');
 
       expect(servers).toBeDefined();
-      expect(servers?.length).toBeGreaterThan(0);
+      expect((servers as any)?.length).toBeGreaterThan(0);
 
-      const firstServer = servers?.get(0);
+      const firstServer = getNestedElement(servers,0);
       expect(firstServer?.get('url')?.toValue()).toBe('https://api.test.com/v1');
     });
 
@@ -119,8 +131,8 @@ describe('OpenAPIGenerator', () => {
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
       const servers = openapi.get('servers');
 
-      expect(servers?.length).toBe(1);
-      const server = servers?.get(0);
+      expect((servers as any)?.length).toBe(1);
+      const server = getNestedElement(servers,0);
       expect(server?.get('url')?.toValue()).toBe('https://custom.example.com');
       expect(server?.get('description')?.toValue()).toBe('Custom server');
     });
@@ -141,9 +153,9 @@ describe('OpenAPIGenerator', () => {
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
       const paths = openapi.get('paths');
 
-      expect(paths?.get('/workflows/placeOrder')).toBeDefined();
-      expect(paths?.get('/workflows/cancelOrder')).toBeDefined();
-      expect(paths?.get('/workflows/updateOrder')).toBeDefined();
+      expect(getNestedElement(paths,'/workflows/placeOrder')).toBeDefined();
+      expect(getNestedElement(paths,'/workflows/cancelOrder')).toBeDefined();
+      expect(getNestedElement(paths,'/workflows/updateOrder')).toBeDefined();
     });
 
     it('should create POST operation for each workflow', async () => {
@@ -159,8 +171,8 @@ describe('OpenAPIGenerator', () => {
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
       const paths = openapi.get('paths');
-      const pathItem = paths?.get('/workflows/getProduct');
-      const operation = pathItem?.get('post');
+      const pathItem = getNestedElement(paths,'/workflows/getProduct');
+      const operation = getNestedElement(pathItem, 'post');
 
       expect(operation).toBeDefined();
       expect(operation?.get('operationId')?.toValue()).toBe('execute_getProduct');
@@ -178,7 +190,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const operation = openapi.get('paths')?.get('/workflows/getProduct')?.get('post');
+      const operation = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post');
 
       expect(operation?.get('summary')?.toValue()).toBe('Get product details');
       expect(operation?.get('description')?.toValue()).toBe('Retrieve product information by ID');
@@ -196,7 +208,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const operation = openapi.get('paths')?.get('/workflows/getProduct')?.get('post');
+      const operation = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post');
 
       expect(operation?.get('x-arazzo-workflow-id')?.toValue()).toBe('getProduct');
     });
@@ -215,7 +227,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const operation = openapi.get('paths')?.get('/workflows/getProduct')?.get('post');
+      const operation = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post');
       const requestBody = operation?.get('requestBody');
 
       expect(requestBody).toBeDefined();
@@ -241,14 +253,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const schema = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
-        ?.get('requestBody')
-        ?.get('content')
-        ?.get('application/json')
-        ?.get('schema');
+      const schema = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post', 'requestBody', 'content', 'application/json', 'schema');
 
       const properties = schema?.get('properties');
       const productIdSchema = properties?.get('productId');
@@ -269,14 +274,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const schema = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
-        ?.get('requestBody')
-        ?.get('content')
-        ?.get('application/json')
-        ?.get('schema');
+      const schema = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post', 'requestBody', 'content', 'application/json', 'schema');
 
       const required = schema?.get('required');
       expect(required).toBeDefined();
@@ -295,14 +293,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const schema = openapi
-        .get('paths')
-        ?.get('/workflows/placeOrder')
-        ?.get('post')
-        ?.get('requestBody')
-        ?.get('content')
-        ?.get('application/json')
-        ?.get('schema');
+      const schema = getNestedElement(openapi, 'paths', '/workflows/placeOrder', 'post', 'requestBody', 'content', 'application/json', 'schema');
 
       const properties = schema?.get('properties');
       const itemsSchema = properties?.get('items');
@@ -324,14 +315,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const schema = openapi
-        .get('paths')
-        ?.get('/workflows/placeOrder')
-        ?.get('post')
-        ?.get('requestBody')
-        ?.get('content')
-        ?.get('application/json')
-        ?.get('schema');
+      const schema = getNestedElement(openapi, 'paths', '/workflows/placeOrder', 'post', 'requestBody', 'content', 'application/json', 'schema');
 
       const properties = schema?.get('properties');
       const paymentMethodSchema = properties?.get('paymentMethod');
@@ -356,14 +340,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const schema = openapi
-        .get('paths')
-        ?.get('/workflows/placeOrder')
-        ?.get('post')
-        ?.get('requestBody')
-        ?.get('content')
-        ?.get('application/json')
-        ?.get('schema');
+      const schema = getNestedElement(openapi, 'paths', '/workflows/placeOrder', 'post', 'requestBody', 'content', 'application/json', 'schema');
 
       const properties = schema?.get('properties');
       const customerIdSchema = properties?.get('customerId');
@@ -386,7 +363,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, [workflowWithoutInputs], filePath, config);
-      const operation = openapi.get('paths')?.get('/workflows/getProduct')?.get('post');
+      const operation = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post');
       const requestBody = operation?.get('requestBody');
 
       expect(requestBody).toBeUndefined();
@@ -406,11 +383,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const responses = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
-        ?.get('responses');
+      const responses = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post', 'responses');
 
       const response200 = responses?.get('200');
       expect(response200).toBeDefined();
@@ -430,11 +403,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const responses = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
-        ?.get('responses');
+      const responses = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post', 'responses');
 
       const response202 = responses?.get('202');
       expect(response202).toBeDefined();
@@ -452,11 +421,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const response = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
-        ?.get('responses')
+      const response = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post', 'responses')
         ?.get('200');
 
       const schema = response
@@ -483,15 +448,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const schema = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
-        ?.get('responses')
-        ?.get('200')
-        ?.get('content')
-        ?.get('application/json')
-        ?.get('schema');
+      const schema = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post', 'responses', '200', 'content', 'application/json', 'schema');
 
       const properties = schema?.get('properties');
 
@@ -516,15 +473,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
-      const schema = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
-        ?.get('responses')
-        ?.get('200')
-        ?.get('content')
-        ?.get('application/json')
-        ?.get('schema');
+      const schema = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post', 'responses', '200', 'content', 'application/json', 'schema');
 
       const required = schema?.get('required');
       const requiredArray = Array.from(required as any).map((el: any) => el.toValue());
@@ -548,11 +497,7 @@ describe('OpenAPIGenerator', () => {
       };
 
       const openapi = await generator.generateOpenAPI(document, [workflowWithoutOutputs], filePath, config);
-      const response = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
-        ?.get('responses')
+      const response = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post', 'responses')
         ?.get('200');
 
       const content = response?.get('content');

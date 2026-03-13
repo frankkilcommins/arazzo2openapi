@@ -9,6 +9,16 @@ import { OpenAPIGenerator } from '../../src/core/openapi-generator';
 import { GenerationConfig } from '../../src/types/config';
 import * as path from 'path';
 
+// Helper to safely navigate nested element properties in tests
+function getNestedElement(parent: any, ...keys: string[]): any {
+  let current = parent;
+  for (const key of keys) {
+    if (!current) return undefined;
+    current = current.get?.(key);
+  }
+  return current;
+}
+
 describe('Type Inference Integration', () => {
   let parser: ArazzoParser;
   let analyzer: WorkflowAnalyzer;
@@ -38,10 +48,7 @@ describe('Type Inference Integration', () => {
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
-      const productNameSchema = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
+      const productNameSchema = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post')
         ?.get('responses')
         ?.get('200')
         ?.get('content')
@@ -66,10 +73,7 @@ describe('Type Inference Integration', () => {
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
-      const productPriceSchema = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
+      const productPriceSchema = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post')
         ?.get('responses')
         ?.get('200')
         ?.get('content')
@@ -97,10 +101,7 @@ describe('Type Inference Integration', () => {
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
       // Check placeOrder workflow
-      const placeOrderSchema = openapi
-        .get('paths')
-        ?.get('/workflows/placeOrder')
-        ?.get('post')
+      const placeOrderSchema = getNestedElement(openapi, 'paths', '/workflows/placeOrder', 'post')
         ?.get('responses')
         ?.get('200')
         ?.get('content')
@@ -111,10 +112,7 @@ describe('Type Inference Integration', () => {
       expect(placeOrderSchema?.get('properties')?.get('orderId')).toBeDefined();
 
       // Check cancelOrder workflow
-      const cancelOrderSchema = openapi
-        .get('paths')
-        ?.get('/workflows/cancelOrder')
-        ?.get('post')
+      const cancelOrderSchema = getNestedElement(openapi, 'paths', '/workflows/cancelOrder', 'post')
         ?.get('responses')
         ?.get('200')
         ?.get('content')
@@ -125,10 +123,7 @@ describe('Type Inference Integration', () => {
       expect(cancelOrderSchema?.get('properties')?.get('status')).toBeDefined();
 
       // Check updateOrder workflow
-      const updateOrderSchema = openapi
-        .get('paths')
-        ?.get('/workflows/updateOrder')
-        ?.get('post')
+      const updateOrderSchema = getNestedElement(openapi, 'paths', '/workflows/updateOrder', 'post')
         ?.get('responses')
         ?.get('200')
         ?.get('content')
@@ -194,7 +189,7 @@ describe('Type Inference Integration', () => {
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
-      const xArazzoDoc = openapi.get('info')?.get('x-arazzo-document')?.toValue();
+      const xArazzoDoc = getNestedElement(openapi, 'info','x-arazzo-document')?.toValue();
       expect(xArazzoDoc).toBe(filePath);
     });
 
@@ -211,10 +206,7 @@ describe('Type Inference Integration', () => {
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
-      const xArazzoWorkflowId = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
+      const xArazzoWorkflowId = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post')
         ?.get('x-arazzo-workflow-id')
         ?.toValue();
 
@@ -236,10 +228,7 @@ describe('Type Inference Integration', () => {
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
-      const requestBodySchema = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
+      const requestBodySchema = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post')
         ?.get('requestBody')
         ?.get('content')
         ?.get('application/json')
@@ -270,10 +259,7 @@ describe('Type Inference Integration', () => {
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
-      const responseSchema = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
+      const responseSchema = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post')
         ?.get('responses')
         ?.get('200')
         ?.get('content')
@@ -304,10 +290,7 @@ describe('Type Inference Integration', () => {
 
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
-      const response201 = openapi
-        .get('paths')
-        ?.get('/workflows/getProduct')
-        ?.get('post')
+      const response201 = getNestedElement(openapi, 'paths', '/workflows/getProduct', 'post')
         ?.get('responses')
         ?.get('201');
 
@@ -331,9 +314,9 @@ describe('Type Inference Integration', () => {
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
       const info = openapi.get('info');
-      expect(info?.get('title')?.toValue()).toBe('Simple E-Commerce Workflow');
-      expect(info?.get('version')?.toValue()).toBe('1.0.0');
-      expect(info?.get('description')?.toValue()).toBe('A simple workflow for testing');
+      expect(getNestedElement(info,'title')?.toValue()).toBe('Simple E-Commerce Workflow');
+      expect(getNestedElement(info,'version')?.toValue()).toBe('1.0.0');
+      expect(getNestedElement(info,'description')?.toValue()).toBe('A simple workflow for testing');
     });
 
     it('should apply CLI overrides for info', async () => {
@@ -353,9 +336,9 @@ describe('Type Inference Integration', () => {
       const openapi = await generator.generateOpenAPI(document, workflows, filePath, config);
 
       const info = openapi.get('info');
-      expect(info?.get('title')?.toValue()).toBe('Override Title');
-      expect(info?.get('version')?.toValue()).toBe('2.0.0');
-      expect(info?.get('description')?.toValue()).toBe('Override Description');
+      expect(getNestedElement(info,'title')?.toValue()).toBe('Override Title');
+      expect(getNestedElement(info,'version')?.toValue()).toBe('2.0.0');
+      expect(getNestedElement(info,'description')?.toValue()).toBe('Override Description');
     });
   });
 

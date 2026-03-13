@@ -3,6 +3,7 @@ info:
   title: Simple E-Commerce Workflow
   version: 1.0.0
   description: A simple workflow for testing
+  x-arazzo-document: /Users/frank/GitHub/arazzo2openapi/tests/fixtures/arazzo/simple-workflow.yaml
 servers:
   - url: https://api.test.com/v1
     description: Production server
@@ -12,6 +13,7 @@ paths:
   /workflows/getProduct:
     post:
       operationId: execute_getProduct
+      x-arazzo-workflow-id: getProduct
       summary: Get product details
       description: Retrieve product information by ID
       requestBody:
@@ -36,12 +38,8 @@ paths:
                 properties:
                   productName:
                     type: string
-                    description: "Output from runtime expression: $steps.fetchProduct.outputs.name"
                   productPrice:
-                    type: string
-                    description: "Output from runtime expression: $steps.fetchProduct.outputs.price"
+                    type: number
                 required:
                   - productName
                   - productPrice
-      x-arazzo-workflow-id: getProduct
-x-arazzo-document: /Users/frank/GitHub/arazzo2openapi/tests/fixtures/arazzo/simple-workflow.yaml

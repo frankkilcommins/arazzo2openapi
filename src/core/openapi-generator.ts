@@ -12,7 +12,7 @@ import {
   ServerElement,
   ServersElement,
 } from '@speclynx/apidom-ns-openapi-3-1';
-import { ObjectElement, StringElement, ArrayElement } from '@speclynx/apidom-core';
+import { ObjectElement, StringElement, ArrayElement } from '@speclynx/apidom-datamodel';
 import { ArazzoSpecification1Element } from '@speclynx/apidom-ns-arazzo-1';
 import { GenerationConfig, ServerConfig } from '../types/config';
 import { AnalyzedWorkflow, WorkflowInputs } from '../core/workflow-analyzer';

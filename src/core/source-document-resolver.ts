@@ -9,6 +9,7 @@ import { parse as parseOpenApiJson31 } from '@speclynx/apidom-parser-adapter-ope
 import { parse as parseOpenApiYaml31 } from '@speclynx/apidom-parser-adapter-openapi-yaml-3-1';
 import { OpenApi3_0Element } from '@speclynx/apidom-ns-openapi-3-0';
 import { OpenApi3_1Element } from '@speclynx/apidom-ns-openapi-3-1';
+import { isObjectElement, isArrayElement } from '@speclynx/apidom-datamodel';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -118,17 +119,17 @@ export class SourceDocumentResolver {
     operationId: string
   ): any | null {
     const paths = openapiDoc.get('paths');
-    if (!paths) return null;
+    if (!paths || !isObjectElement(paths)) return null;
 
     const httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'];
 
     for (const pathKey of paths.keys()) {
-      const pathItem = paths.get(pathKey);
-      if (!pathItem) continue;
+      const pathItem = paths.get(pathKey as string);
+      if (!pathItem || !isObjectElement(pathItem)) continue;
 
       for (const method of httpMethods) {
         const operation = pathItem.get(method);
-        if (!operation) continue;
+        if (!operation || !isObjectElement(operation)) continue;
 
         const opId = operation.get('operationId')?.toValue();
         if (opId === operationId) {
@@ -162,9 +163,12 @@ export class SourceDocumentResolver {
     sourceName: string
   ): any | null {
     const sourceDescriptions = arazzoDoc.get('sourceDescriptions');
-    if (!sourceDescriptions) return null;
+    if (!sourceDescriptions || !isArrayElement(sourceDescriptions)) return null;
 
-    for (const sourceDesc of sourceDescriptions.content) {
+    for (let i = 0; i < sourceDescriptions.length; i++) {
+      const sourceDesc = sourceDescriptions.get(i);
+      if (!isObjectElement(sourceDesc)) continue;
+
       const name = sourceDesc.get('name')?.toValue();
       if (name === sourceName) {
         return sourceDesc;
