@@ -1,0 +1,11 @@
+arazzo2openapi
+Copyright (c) 2026 Frank Kilcommins
+arazzo2openapi is licensed under Apache 2.0 license.
+Copy of the Apache 2.0 license can be found in `LICENSE` file.
+
+This software includes the following third-party components:
+
+SpecLynx ApiDOM
+Copyright 2025 SpecLynx
+Licensed under the Apache License, Version 2.0.
+https://github.com/speclynx/apidom
