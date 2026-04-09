@@ -1,6 +1,6 @@
 {
   "name": "arazzo2openapi",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Convert Arazzo workflow documents to OpenAPI documents",
   "keywords": [
     "arazzo",
@@ -33,7 +33,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsc",
@@ -48,19 +49,19 @@
     "cli": "node dist/cli/index.js"
   },
   "dependencies": {
-    "@speclynx/apidom-core": "^4.0.3",
-    "@speclynx/apidom-datamodel": "^4.0.3",
-    "@speclynx/apidom-json-pointer": "^4.0.3",
-    "@speclynx/apidom-ns-arazzo-1": "^4.0.3",
-    "@speclynx/apidom-ns-openapi-3-0": "^4.0.3",
-    "@speclynx/apidom-ns-openapi-3-1": "^4.0.3",
-    "@speclynx/apidom-parser-adapter-arazzo-json-1": "^4.0.3",
-    "@speclynx/apidom-parser-adapter-arazzo-yaml-1": "^4.0.3",
-    "@speclynx/apidom-parser-adapter-openapi-json-3-0": "^4.0.3",
-    "@speclynx/apidom-parser-adapter-openapi-json-3-1": "^4.0.3",
-    "@speclynx/apidom-parser-adapter-openapi-yaml-3-0": "^4.0.3",
-    "@speclynx/apidom-parser-adapter-openapi-yaml-3-1": "^4.0.3",
-    "@speclynx/apidom-reference": "^4.0.3",
+    "@speclynx/apidom-core": "^4.3.1",
+    "@speclynx/apidom-datamodel": "^4.3.1",
+    "@speclynx/apidom-json-pointer": "^4.3.1",
+    "@speclynx/apidom-ns-arazzo-1": "^4.3.1",
+    "@speclynx/apidom-ns-openapi-3-0": "^4.3.1",
+    "@speclynx/apidom-ns-openapi-3-1": "^4.3.1",
+    "@speclynx/apidom-parser-adapter-arazzo-json-1": "^4.3.1",
+    "@speclynx/apidom-parser-adapter-arazzo-yaml-1": "^4.3.1",
+    "@speclynx/apidom-parser-adapter-openapi-json-3-0": "^4.3.1",
+    "@speclynx/apidom-parser-adapter-openapi-json-3-1": "^4.3.1",
+    "@speclynx/apidom-parser-adapter-openapi-yaml-3-0": "^4.3.1",
+    "@speclynx/apidom-parser-adapter-openapi-yaml-3-1": "^4.3.1",
+    "@speclynx/apidom-reference": "^4.3.1",
     "@swaggerexpert/arazzo-runtime-expression": "^2.0.3",
     "chalk": "^5.0.0",
     "commander": "^11.0.0",
