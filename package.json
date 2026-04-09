@@ -1,6 +1,6 @@
 {
   "name": "arazzo2openapi",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Convert Arazzo workflow documents to OpenAPI documents",
   "keywords": [
     "arazzo",
