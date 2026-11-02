@@ -228,7 +228,7 @@ export class TypeResolver {
         if (rest) {
           if (separator === '#') {
             // JSON Pointer notation: #/companies/0/id → navigate with RFC 6901 semantics
-            targetSchema = this.navigateJsonPath(targetSchema, rest);
+            targetSchema = this.navigateJsonPath(targetSchema, rest, openapiDoc);
             if (!targetSchema) {
               return this.getFallbackType(
                 `JSON Pointer "${rest}" could not be resolved in response schema`,
@@ -317,7 +317,7 @@ export class TypeResolver {
 
     // Apply JSONPath navigation if present
     if (jsonPath) {
-      targetSchema = this.navigateJsonPath(targetSchema, jsonPath);
+      targetSchema = this.navigateJsonPath(targetSchema, jsonPath, openapiDoc);
       if (!targetSchema) {
         return this.getFallbackType(
           `JSONPath "${jsonPath}" could not be resolved in schema`,
@@ -454,11 +454,12 @@ export class TypeResolver {
   }
 
   /**
-   * Navigate JSONPath through a schema
-   * JSONPath format: /data/0/id → ["data", "0", "id"]
+   * Navigate a JSON Pointer path through an ApiDOM schema element.
+   * Pointer format: /companies/0/id — numeric tokens navigate into array items,
+   * string tokens navigate into object properties.
+   * $ref nodes are resolved at each step so the caller never has to handle them.
    */
-  private navigateJsonPath(schema: any, jsonPath: string): any | null {
-    // Parse JSONPath into segments
+  private navigateJsonPath(schema: any, jsonPath: string, openapiDoc: any): any | null {
     const segments = jsonPath.split('/').filter((s) => s.length > 0);
 
     let current = schema;
@@ -466,12 +467,15 @@ export class TypeResolver {
     for (const segment of segments) {
       if (!current) return null;
 
-      // Check if segment is numeric (array index)
+      // Resolve $ref before navigating into this node
+      current = this.resolveSchemaRef(current, openapiDoc);
+      if (!current) return null;
+
       if (/^\d+$/.test(segment)) {
-        // Navigate to array items
+        // Numeric segment → navigate into array items schema
         current = current.get?.('items');
       } else {
-        // Navigate to object property
+        // String segment → navigate into named property
         const properties = current.get?.('properties');
         if (!properties) return null;
         current = properties.get?.(segment);
