@@ -41,3 +41,29 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  playground:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: playground/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install playground dependencies
+        working-directory: ./playground
+        run: npm ci
+
+      - name: Build Astro site
+        working-directory: ./playground
+        run: npm run build
