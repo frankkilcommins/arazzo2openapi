@@ -7,6 +7,7 @@ import { ArazzoParser } from '../../src/core/arazzo-parser';
 import { WorkflowAnalyzer } from '../../src/core/workflow-analyzer';
 import { OpenAPIGenerator } from '../../src/core/openapi-generator';
 import { GenerationConfig } from '../../src/types/config';
+import { createNodeGenerator } from '../helpers';
 import * as path from 'path';
 
 // Helper to safely navigate nested element properties in tests
@@ -27,7 +28,7 @@ describe('Type Inference Integration', () => {
   beforeEach(() => {
     parser = new ArazzoParser();
     analyzer = new WorkflowAnalyzer();
-    generator = new OpenAPIGenerator();
+    generator = createNodeGenerator();
   });
 
   afterEach(() => {

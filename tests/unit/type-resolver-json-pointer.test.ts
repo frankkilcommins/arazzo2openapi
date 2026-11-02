@@ -16,6 +16,7 @@ import { TypeResolver } from '../../src/core/type-resolver';
 import { SourceDocumentResolver } from '../../src/core/source-document-resolver';
 import { ArazzoParser } from '../../src/core/arazzo-parser';
 import { AnalyzedWorkflow } from '../../src/core/workflow-analyzer';
+import { createNodeResolver, createNodeEngine } from '../helpers';
 import * as path from 'path';
 
 const fixturesPath = path.join(__dirname, '..', 'fixtures');
@@ -35,7 +36,7 @@ describe('TypeResolver — JSON Pointer step output resolution', () => {
 
   beforeEach(() => {
     resolver = new TypeResolver();
-    sourceResolver = new SourceDocumentResolver();
+    sourceResolver = createNodeResolver();
   });
 
   afterEach(() => {
@@ -289,11 +290,10 @@ describe('TypeResolver — JSON Pointer step output resolution', () => {
   describe('end-to-end workflow output schema', () => {
     it('infers all output types correctly via TypeInferenceEngine', async () => {
       // Import here to avoid circular test init
-      const { TypeInferenceEngine } = await import('../../src/core/type-inference-engine');
       const { WorkflowAnalyzer } = await import('../../src/core/workflow-analyzer');
 
       const analyzer = new WorkflowAnalyzer();
-      const engine = new TypeInferenceEngine();
+      const engine = createNodeEngine();
 
       const { document } = await parser.loadDocument(arazzoPath);
       const workflows = analyzer.analyzeAllWorkflows(document);

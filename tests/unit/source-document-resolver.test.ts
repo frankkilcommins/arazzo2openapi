@@ -5,6 +5,7 @@
 
 import { SourceDocumentResolver } from '../../src/core/source-document-resolver';
 import { ArazzoParser } from '../../src/core/arazzo-parser';
+import { createNodeResolver } from '../helpers';
 import * as path from 'path';
 
 describe('SourceDocumentResolver', () => {
@@ -14,7 +15,7 @@ describe('SourceDocumentResolver', () => {
   const arazzoPath = path.join(fixturesPath, 'arazzo-with-sources.json');
 
   beforeEach(async () => {
-    resolver = new SourceDocumentResolver();
+    resolver = createNodeResolver();
     parser = new ArazzoParser();
   });
 

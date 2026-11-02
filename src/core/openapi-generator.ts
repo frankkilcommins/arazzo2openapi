@@ -26,9 +26,9 @@ export class OpenAPIGenerator {
   private metadataDeriver: MetadataDeriver;
   private typeInferenceEngine: TypeInferenceEngine;
 
-  constructor() {
+  constructor(typeInferenceEngine?: TypeInferenceEngine) {
     this.metadataDeriver = new MetadataDeriver();
-    this.typeInferenceEngine = new TypeInferenceEngine();
+    this.typeInferenceEngine = typeInferenceEngine ?? new TypeInferenceEngine();
   }
 
   /**

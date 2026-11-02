@@ -6,6 +6,7 @@
 import { TypeInferenceEngine } from '../../src/core/type-inference-engine';
 import { ArazzoParser } from '../../src/core/arazzo-parser';
 import { AnalyzedWorkflow } from '../../src/core/workflow-analyzer';
+import { createNodeEngine } from '../helpers';
 import * as path from 'path';
 
 describe('TypeInferenceEngine', () => {
@@ -16,7 +17,7 @@ describe('TypeInferenceEngine', () => {
   const arazzoPath = path.join(fixturesPath, 'arazzo-with-sources.json');
 
   beforeEach(() => {
-    engine = new TypeInferenceEngine();
+    engine = createNodeEngine();
     parser = new ArazzoParser();
   });
 

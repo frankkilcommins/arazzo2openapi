@@ -127,15 +127,17 @@ arazzo2openapi https://example.com/workflow.yaml -o openapi.yaml</code></pre>
 <script>
   import { convertArazzoToOpenAPI } from '../lib/converter';
 
-  const examples = {
+  const GITHUB_RAW = 'https://raw.githubusercontent.com/frankkilcommins/arazzo2openapi/main/examples/openapi';
+
+  const examples: Record<string, { input: string }> = {
     simple: {
-      input: `arazzo: 1.0.0
+      input: `arazzo: 1.0.1
 info:
   title: Simple Product Workflow
   version: 1.0.0
 sourceDescriptions:
   - name: productsAPI
-    url: https://api.example.com/openapi.json
+    url: ${GITHUB_RAW}/products-api.yaml
     type: openapi
 workflows:
   - workflowId: getProduct
@@ -154,55 +156,18 @@ workflows:
           - name: id
             in: path
             value: $inputs.productId
+        outputs:
+          name: $response.body#/name
+          price: $response.body#/price
+          inStock: $response.body#/inStock
     outputs:
       name: $steps.fetchProduct.outputs.name
-      price: $steps.fetchProduct.outputs.price`,
-      output: `openapi: 3.1.0
-info:
-  title: Simple Product Workflow
-  version: 1.0.0
-  x-arazzo-document: workflow.yaml
-servers:
-  - url: https://api.example.com
-paths:
-  /workflows/getProduct:
-    post:
-      operationId: execute_getProduct
-      x-arazzo-workflow-id: getProduct
-      summary: Retrieve product details
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                productId:
-                  type: string
-              required:
-                - productId
-      responses:
-        '200':
-          description: Workflow getProduct executed successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    description: Product name
-                  price:
-                    type: number
-                    format: float
-                    description: Product price
-                required:
-                  - name
-                  - price`
+      price: $steps.fetchProduct.outputs.price
+      inStock: $steps.fetchProduct.outputs.inStock`
     },
     petstore: {
       input: `{
-  "arazzo": "1.0.0",
+  "arazzo": "1.0.1",
   "info": {
     "title": "Petstore Order Workflow",
     "version": "1.0.0"
@@ -217,10 +182,11 @@ paths:
   "workflows": [
     {
       "workflowId": "orderPet",
+      "summary": "Place an order for a pet",
       "inputs": {
         "type": "object",
         "properties": {
-          "petId": { "type": "integer" },
+          "petId": { "type": "integer", "format": "int64" },
           "quantity": { "type": "integer", "default": 1 }
         },
         "required": ["petId"]
@@ -236,161 +202,63 @@ paths:
               "quantity": "$inputs.quantity",
               "status": "placed"
             }
+          },
+          "outputs": {
+            "orderId": "$response.body#/id",
+            "orderStatus": "$response.body#/status"
           }
         }
       ],
       "outputs": {
-        "orderId": "$steps.placeOrder.outputs.id",
-        "status": "$steps.placeOrder.outputs.status"
+        "orderId": "$steps.placeOrder.outputs.orderId",
+        "orderStatus": "$steps.placeOrder.outputs.orderStatus"
       }
     }
   ]
-}`,
-      output: `{
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Petstore Order Workflow",
-    "version": "1.0.0",
-    "x-arazzo-document": "workflow.json"
-  },
-  "servers": [
-    {
-      "url": "/api/v3"
-    }
-  ],
-  "paths": {
-    "/workflows/orderPet": {
-      "post": {
-        "operationId": "execute_orderPet",
-        "x-arazzo-workflow-id": "orderPet",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "petId": {
-                    "type": "integer"
-                  },
-                  "quantity": {
-                    "type": "integer"
-                  }
-                },
-                "required": ["petId"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Workflow orderPet executed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "orderId": {
-                      "type": "integer",
-                      "format": "int64"
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": ["placed", "approved", "delivered"]
-                    }
-                  },
-                  "required": ["orderId", "status"]
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 }`
     },
     multi: {
-      input: `arazzo: 1.0.0
+      input: `arazzo: 1.0.1
 info:
   title: Multi-Workflow Example
   version: 1.0.0
 sourceDescriptions:
-  - name: api
-    url: https://api.example.com/openapi.json
+  - name: itemsAPI
+    url: ${GITHUB_RAW}/items-api.yaml
     type: openapi
 workflows:
   - workflowId: createItem
+    summary: Create a new item
     steps:
       - stepId: create
-        operationId: api.createItem
+        operationId: itemsAPI.createItem
+        outputs:
+          itemId: $response.body#/id
+          itemStatus: $response.body#/status
+          createdAt: $response.body#/createdAt
     outputs:
-      itemId: $steps.create.outputs.id
+      itemId: $steps.create.outputs.itemId
+      itemStatus: $steps.create.outputs.itemStatus
+      createdAt: $steps.create.outputs.createdAt
 
   - workflowId: updateItem
+    summary: Update an existing item
     inputs:
       type: object
       properties:
         itemId:
           type: string
-      required: [itemId]
+      required:
+        - itemId
     steps:
       - stepId: update
-        operationId: api.updateItem
+        operationId: itemsAPI.updateItem
+        outputs:
+          status: $response.body#/status
+          updatedAt: $response.body#/updatedAt
     outputs:
-      result: $steps.update.outputs.status`,
-      output: `openapi: 3.1.0
-info:
-  title: Multi-Workflow Example
-  version: 1.0.0
-  x-arazzo-document: workflow.yaml
-servers:
-  - url: https://api.example.com
-paths:
-  /workflows/createItem:
-    post:
-      operationId: execute_createItem
-      x-arazzo-workflow-id: createItem
-      responses:
-        '200':
-          description: Workflow createItem executed successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  itemId:
-                    type: string
-                required:
-                  - itemId
-
-  /workflows/updateItem:
-    post:
-      operationId: execute_updateItem
-      x-arazzo-workflow-id: updateItem
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                itemId:
-                  type: string
-              required:
-                - itemId
-      responses:
-        '200':
-          description: Workflow updateItem executed successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: string
-                required:
-                  - result`
+      status: $steps.update.outputs.status
+      updatedAt: $steps.update.outputs.updatedAt`
     }
   };
 
@@ -410,13 +278,13 @@ paths:
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   });
 
-  // Example selector
-  exampleSelect?.addEventListener('change', (e) => {
+  // Example selector — load input and auto-convert
+  exampleSelect?.addEventListener('change', async (e) => {
     const value = (e.target as HTMLSelectElement).value;
-    if (value && examples[value as keyof typeof examples]) {
-      const example = examples[value as keyof typeof examples];
-      if (arazzoInput) arazzoInput.value = example.input;
-      if (openapiOutput) openapiOutput.textContent = example.output;
+    if (value && examples[value]) {
+      if (arazzoInput) arazzoInput.value = examples[value].input;
+      if (openapiOutput) openapiOutput.textContent = 'Converting...';
+      await convertArazzo();
     }
   });
 
@@ -499,10 +367,12 @@ paths:
     }, 2000);
   });
 
-  // Load first example by default
+  // Load first example on page load and auto-convert
   if (exampleSelect) {
     exampleSelect.value = 'simple';
-    exampleSelect.dispatchEvent(new Event('change'));
+    if (arazzoInput) arazzoInput.value = examples['simple'].input;
+    if (openapiOutput) openapiOutput.textContent = 'Converting...';
+    convertArazzo();
   }
 </script>
 
