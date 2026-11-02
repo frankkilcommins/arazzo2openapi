@@ -19,7 +19,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/frankkilcommins/arazzo2openapi"
+    "url": "git+https://github.com/frankkilcommins/arazzo2openapi.git"
   },
   "homepage": "https://frankkilcommins.github.io/arazzo2openapi",
   "bugs": {
