@@ -2,6 +2,7 @@ import { OpenAPIGenerator } from '../../src/core/openapi-generator';
 import { ArazzoParser } from '../../src/core/arazzo-parser';
 import { WorkflowAnalyzer } from '../../src/core/workflow-analyzer';
 import { GenerationConfig } from '../../src/types/config';
+import { createNodeGenerator } from '../helpers';
 import { isObjectElement } from '@speclynx/apidom-datamodel';
 import * as path from 'path';
 
@@ -22,7 +23,7 @@ describe('OpenAPIGenerator', () => {
   let analyzer: WorkflowAnalyzer;
 
   beforeEach(() => {
-    generator = new OpenAPIGenerator();
+    generator = createNodeGenerator();
     parser = new ArazzoParser();
     analyzer = new WorkflowAnalyzer();
   });

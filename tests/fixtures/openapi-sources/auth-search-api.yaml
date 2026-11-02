@@ -1,0 +1,64 @@
+openapi: 3.1.0
+info:
+  title: Auth & Search API
+  version: 1.0.0
+  description: Fixture API for testing JSON Pointer step output resolution
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /auth:
+    post:
+      operationId: authenticate
+      summary: Obtain a JWT token
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT bearer token
+                  expiresIn:
+                    type: integer
+                    description: Token lifetime in seconds
+                required:
+                  - token
+  /companies:
+    get:
+      operationId: searchCompanies
+      summary: Search for companies
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  companies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          format: int64
+                          description: Unique company identifier
+                        name:
+                          type: string
+                          description: Company name
+                        country:
+                          type: string
+                          description: ISO country code
+                      required:
+                        - id
+                        - name
+                  totalSize:
+                    type: integer
+                    description: Total number of matching companies
+                required:
+                  - companies
+                  - totalSize

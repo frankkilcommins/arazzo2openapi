@@ -6,6 +6,7 @@ import { OpenAPIGenerator } from '../../src/core/openapi-generator';
 import { ArazzoParser } from '../../src/core/arazzo-parser';
 import { WorkflowAnalyzer } from '../../src/core/workflow-analyzer';
 import { GenerationConfig } from '../../src/types/config';
+import { createNodeGenerator } from '../helpers';
 import { toValue } from '@speclynx/apidom-core';
 import * as path from 'path';
 
@@ -15,7 +16,7 @@ describe('Type Inference Regression Tests', () => {
   let analyzer: WorkflowAnalyzer;
 
   beforeEach(() => {
-    generator = new OpenAPIGenerator();
+    generator = createNodeGenerator();
     parser = new ArazzoParser();
     analyzer = new WorkflowAnalyzer();
   });

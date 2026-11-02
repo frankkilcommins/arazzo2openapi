@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info:
+  title: Products API
+  version: 1.0.0
+  description: Example product catalogue API used by arazzo2openapi playground
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /products/{id}:
+    get:
+      operationId: getProduct
+      summary: Get a product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Product identifier
+                  name:
+                    type: string
+                    description: Product name
+                  price:
+                    type: number
+                    format: float
+                    description: Product price in USD
+                  currency:
+                    type: string
+                    description: ISO 4217 currency code
+                    example: USD
+                  inStock:
+                    type: boolean
+                    description: Whether the product is currently in stock
+                  rating:
+                    type: number
+                    format: float
+                    minimum: 0
+                    maximum: 5
+                    description: Average customer rating (0–5)
+                required:
+                  - id
+                  - name
+                  - price
+                  - inStock

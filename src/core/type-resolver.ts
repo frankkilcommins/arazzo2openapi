@@ -194,9 +194,14 @@ export class TypeResolver {
         // New behavior: look up the step's output expression
         const outputExpression = step.outputs[outputName];
 
-        // Parse the output expression to extract the path
-        // Expected format: $response.body.propertyName or $response.header.headerName
-        const expressionMatch = outputExpression.match(/^\$response\.(body|header)\.?(.*)$/);
+        // Parse the output expression to extract the path.
+        // Supported formats:
+        //   $response.body                  → whole response body
+        //   $response.body#/token           → JSON Pointer into body
+        //   $response.body#/items/0/id      → JSON Pointer into nested array
+        //   $response.body.propertyName     → dot-notation (legacy)
+        //   $response.header.headerName     → header value (always string)
+        const expressionMatch = outputExpression.match(/^\$response\.(body|header)([#.]?)(.*)$/);
         if (!expressionMatch) {
           return this.getFallbackType(
             `Unsupported output expression format: ${outputExpression}`,
@@ -204,7 +209,7 @@ export class TypeResolver {
           );
         }
 
-        const [, responseType, responsePath] = expressionMatch;
+        const [, responseType, separator, rest] = expressionMatch;
 
         if (responseType === 'header') {
           // Headers are always strings
@@ -216,33 +221,46 @@ export class TypeResolver {
           };
         }
 
-        // Resolve $ref if present
+        // Resolve $ref at the root response schema
         targetSchema = this.resolveSchemaRef(targetSchema, openapiDoc);
 
-        // Navigate through the response body path
-        if (responsePath) {
-          const pathParts = responsePath.split('.');
-          for (const part of pathParts) {
-            if (!part) continue;
-
-            const properties = targetSchema.get?.('properties');
-            if (!properties) {
-              return this.getFallbackType(
-                `No properties found at path: ${responsePath}`,
-                'low'
-              );
-            }
-
-            targetSchema = properties.get?.(part);
+        // Navigate into the response body when a path is present
+        if (rest) {
+          if (separator === '#') {
+            // JSON Pointer notation: #/companies/0/id → navigate with RFC 6901 semantics
+            targetSchema = this.navigateJsonPath(targetSchema, rest, openapiDoc);
             if (!targetSchema) {
               return this.getFallbackType(
-                `Property "${part}" not found in schema`,
+                `JSON Pointer "${rest}" could not be resolved in response schema`,
                 'low'
               );
             }
-
-            // Resolve $ref for nested properties
             targetSchema = this.resolveSchemaRef(targetSchema, openapiDoc);
+          } else {
+            // Dot-notation path: prop.subprop (legacy / less common)
+            const pathParts = rest.split('.');
+            for (const part of pathParts) {
+              if (!part) continue;
+
+              const properties = targetSchema.get?.('properties');
+              if (!properties) {
+                return this.getFallbackType(
+                  `No properties found at path: ${rest}`,
+                  'low'
+                );
+              }
+
+              targetSchema = properties.get?.(part);
+              if (!targetSchema) {
+                return this.getFallbackType(
+                  `Property "${part}" not found in schema`,
+                  'low'
+                );
+              }
+
+              // Resolve $ref for nested properties
+              targetSchema = this.resolveSchemaRef(targetSchema, openapiDoc);
+            }
           }
         }
       } else {
@@ -299,7 +317,7 @@ export class TypeResolver {
 
     // Apply JSONPath navigation if present
     if (jsonPath) {
-      targetSchema = this.navigateJsonPath(targetSchema, jsonPath);
+      targetSchema = this.navigateJsonPath(targetSchema, jsonPath, openapiDoc);
       if (!targetSchema) {
         return this.getFallbackType(
           `JSONPath "${jsonPath}" could not be resolved in schema`,
@@ -436,11 +454,12 @@ export class TypeResolver {
   }
 
   /**
-   * Navigate JSONPath through a schema
-   * JSONPath format: /data/0/id → ["data", "0", "id"]
+   * Navigate a JSON Pointer path through an ApiDOM schema element.
+   * Pointer format: /companies/0/id — numeric tokens navigate into array items,
+   * string tokens navigate into object properties.
+   * $ref nodes are resolved at each step so the caller never has to handle them.
    */
-  private navigateJsonPath(schema: any, jsonPath: string): any | null {
-    // Parse JSONPath into segments
+  private navigateJsonPath(schema: any, jsonPath: string, openapiDoc: any): any | null {
     const segments = jsonPath.split('/').filter((s) => s.length > 0);
 
     let current = schema;
@@ -448,12 +467,15 @@ export class TypeResolver {
     for (const segment of segments) {
       if (!current) return null;
 
-      // Check if segment is numeric (array index)
+      // Resolve $ref before navigating into this node
+      current = this.resolveSchemaRef(current, openapiDoc);
+      if (!current) return null;
+
       if (/^\d+$/.test(segment)) {
-        // Navigate to array items
+        // Numeric segment → navigate into array items schema
         current = current.get?.('items');
       } else {
-        // Navigate to object property
+        // String segment → navigate into named property
         const properties = current.get?.('properties');
         if (!properties) return null;
         current = properties.get?.(segment);

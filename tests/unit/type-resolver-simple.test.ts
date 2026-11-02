@@ -6,6 +6,7 @@ import { TypeResolver } from '../../src/core/type-resolver';
 import { SourceDocumentResolver } from '../../src/core/source-document-resolver';
 import { ArazzoParser } from '../../src/core/arazzo-parser';
 import { AnalyzedWorkflow } from '../../src/core/workflow-analyzer';
+import { createNodeResolver } from '../helpers';
 import * as path from 'path';
 
 describe('TypeResolver (Simplified)', () => {
@@ -18,7 +19,7 @@ describe('TypeResolver (Simplified)', () => {
 
   beforeEach(() => {
     resolver = new TypeResolver();
-    sourceResolver = new SourceDocumentResolver();
+    sourceResolver = createNodeResolver();
     parser = new ArazzoParser();
   });
 

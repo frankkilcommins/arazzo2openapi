@@ -23,9 +23,9 @@ export class TypeInferenceEngine {
   private typeResolver: TypeResolver;
   private typeCache: Map<string, InferredType>;
 
-  constructor() {
+  constructor(sourceResolver?: SourceDocumentResolver) {
     this.expressionParser = new RuntimeExpressionParser();
-    this.sourceResolver = new SourceDocumentResolver();
+    this.sourceResolver = sourceResolver ?? new SourceDocumentResolver();
     this.typeResolver = new TypeResolver();
     this.typeCache = new Map();
   }

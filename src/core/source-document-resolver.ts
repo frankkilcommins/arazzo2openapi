@@ -10,13 +10,29 @@ import { parse as parseOpenApiYaml31 } from '@speclynx/apidom-parser-adapter-ope
 import { OpenApi3_0Element } from '@speclynx/apidom-ns-openapi-3-0';
 import { OpenApi3_1Element } from '@speclynx/apidom-ns-openapi-3-1';
 import { isObjectElement, isArrayElement } from '@speclynx/apidom-datamodel';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+
+export interface SourceDocumentResolverOptions {
+  /**
+   * Called when a source description URL is a relative path and the Arazzo
+   * document itself is a local file. Receives the raw relative URL and the
+   * Arazzo document path so the caller can resolve and read the file.
+   *
+   * Omit this option (or leave it undefined) in browser/remote-only contexts
+   * where filesystem access is not available. Resolution of relative-path
+   * source descriptions will then produce a graceful fallback.
+   */
+  readLocalFile?: (relativeUrl: string, arazzoDocPath: string) => Promise<string>;
+}
 
 type OpenApiElement = OpenApi3_0Element | OpenApi3_1Element;
 
 export class SourceDocumentResolver {
   private documentCache = new Map<string, OpenApiElement>();
+  private readonly readLocalFile?: SourceDocumentResolverOptions['readLocalFile'];
+
+  constructor(options?: SourceDocumentResolverOptions) {
+    this.readLocalFile = options?.readLocalFile;
+  }
 
   /**
    * Resolve an OpenAPI source document by name
@@ -88,14 +104,20 @@ export class SourceDocumentResolver {
           );
         }
       } else {
-        // Arazzo is local file, resolve relative file path
-        resourcePath = path.resolve(path.dirname(arazzoDocPath), url);
+        // Arazzo is local file — delegate to the injected file reader
+        if (!this.readLocalFile) {
+          throw new Error(
+            `Cannot resolve relative source document "${url}": no local file reader was provided. ` +
+            `Pass a readLocalFile function via SourceDocumentResolverOptions to enable local file resolution.`
+          );
+        }
 
         try {
-          content = await fs.readFile(resourcePath, 'utf-8');
+          content = await this.readLocalFile(url, arazzoDocPath);
+          resourcePath = url;
         } catch (error) {
           throw new Error(
-            `Failed to read source document at ${resourcePath}: ${
+            `Failed to read source document "${url}": ${
               error instanceof Error ? error.message : String(error)
             }`
           );

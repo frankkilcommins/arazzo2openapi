@@ -1,0 +1,109 @@
+openapi: 3.1.0
+info:
+  title: Items API
+  version: 1.0.0
+  description: Example item management API used by arazzo2openapi playground
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /items:
+    post:
+      operationId: createItem
+      summary: Create a new item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+              required:
+                - name
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Unique item identifier
+                  name:
+                    type: string
+                    description: Item name
+                  createdAt:
+                    type: string
+                    format: date-time
+                    description: Creation timestamp (ISO 8601)
+                  status:
+                    type: string
+                    enum:
+                      - active
+                      - pending
+                      - archived
+                    description: Current item status
+                required:
+                  - id
+                  - name
+                  - createdAt
+                  - status
+  /items/{id}:
+    put:
+      operationId: updateItem
+      summary: Update an existing item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - pending
+                    - archived
+      responses:
+        '200':
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Item identifier
+                  status:
+                    type: string
+                    enum:
+                      - active
+                      - pending
+                      - archived
+                    description: Updated item status
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    description: Last update timestamp (ISO 8601)
+                required:
+                  - id
+                  - status
+                  - updatedAt

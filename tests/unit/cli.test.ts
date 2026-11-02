@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ArazzoParser } from '../../src/core/arazzo-parser';
 import { WorkflowAnalyzer } from '../../src/core/workflow-analyzer';
 import { OpenAPIGenerator } from '../../src/core/openapi-generator';
+import { createNodeGenerator } from '../helpers';
 
 // Mock console methods to avoid cluttering test output
 const originalConsoleLog = console.log;
@@ -58,7 +59,7 @@ describe('CLI Integration', () => {
       const workflows = analyzer.analyzeAllWorkflows(document);
 
       // Generate OpenAPI
-      const generator = new OpenAPIGenerator();
+      const generator = createNodeGenerator();
       const openapi = await generator.generateOpenAPI(document, workflows, inputPath, {
         arazzoPath: inputPath,
         outputPath,
@@ -103,7 +104,7 @@ describe('CLI Integration', () => {
       const workflows = analyzer.analyzeAllWorkflows(document);
 
       // Generate OpenAPI
-      const generator = new OpenAPIGenerator();
+      const generator = createNodeGenerator();
       const openapi = await generator.generateOpenAPI(document, workflows, inputPath, {
         arazzoPath: inputPath,
         outputPath,
@@ -153,7 +154,7 @@ describe('CLI Integration', () => {
       const workflows = analyzer.analyzeAllWorkflows(document);
 
       // Generate OpenAPI
-      const generator = new OpenAPIGenerator();
+      const generator = createNodeGenerator();
       const openapi = await generator.generateOpenAPI(document, workflows, inputPath, {
         arazzoPath: inputPath,
         outputPath,
@@ -191,7 +192,7 @@ describe('CLI Integration', () => {
       const workflows = analyzer.analyzeAllWorkflows(document);
 
       // Generate OpenAPI
-      const generator = new OpenAPIGenerator();
+      const generator = createNodeGenerator();
       const openapi = await generator.generateOpenAPI(document, workflows, inputPath, {
         arazzoPath: inputPath,
         outputPath,
@@ -235,7 +236,7 @@ describe('CLI Integration', () => {
       const workflows = analyzer.analyzeAllWorkflows(document);
 
       // Generate OpenAPI with overrides
-      const generator = new OpenAPIGenerator();
+      const generator = createNodeGenerator();
       const openapi = await generator.generateOpenAPI(document, workflows, inputPath, {
         arazzoPath: inputPath,
         outputPath,
@@ -281,7 +282,7 @@ describe('CLI Integration', () => {
       const workflows = analyzer.analyzeAllWorkflows(document);
 
       // Generate OpenAPI with custom response code
-      const generator = new OpenAPIGenerator();
+      const generator = createNodeGenerator();
       const openapi = await generator.generateOpenAPI(document, workflows, inputPath, {
         arazzoPath: inputPath,
         outputPath,

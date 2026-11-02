@@ -7,6 +7,8 @@ import * as path from 'path';
 import { ArazzoParser } from '../core/arazzo-parser';
 import { WorkflowAnalyzer } from '../core/workflow-analyzer';
 import { OpenAPIGenerator } from '../core/openapi-generator';
+import { TypeInferenceEngine } from '../core/type-inference-engine';
+import { SourceDocumentResolver } from '../core/source-document-resolver';
 import { GenerationConfig, ServerConfig } from '../types/config';
 import { toValue } from '@speclynx/apidom-core';
 import { stringify as yamlStringify } from 'yaml';
@@ -119,7 +121,13 @@ async function convertArazzoToOpenAPI(arazzoFile: string, options: CliOptions): 
 
   // Generate OpenAPI document
   console.log('Generating OpenAPI document...');
-  const generator = new OpenAPIGenerator();
+  const sourceResolver = new SourceDocumentResolver({
+    readLocalFile: async (relativeUrl, docPath) => {
+      const resolvedPath = path.resolve(path.dirname(docPath), relativeUrl);
+      return fs.readFile(resolvedPath, 'utf-8');
+    },
+  });
+  const generator = new OpenAPIGenerator(new TypeInferenceEngine(sourceResolver));
   const openapi = await generator.generateOpenAPI(document, workflows, arazzoPath, config);
   console.log('✓ Generated OpenAPI document');
 

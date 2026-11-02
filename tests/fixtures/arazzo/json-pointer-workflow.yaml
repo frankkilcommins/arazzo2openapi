@@ -1,0 +1,47 @@
+arazzo: 1.0.1
+info:
+  title: JSON Pointer Step Output Workflow
+  version: 1.0.0
+sourceDescriptions:
+  - name: authSearchAPI
+    url: ../openapi-sources/auth-search-api.yaml
+    type: openapi
+workflows:
+  - workflowId: searchWorkflow
+    summary: Authenticate and search for companies
+    inputs:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        companyName:
+          type: string
+      required:
+        - username
+        - password
+    steps:
+      - stepId: authenticate
+        operationId: authSearchAPI.authenticate
+        outputs:
+          token: $response.body#/token
+          expiresIn: $response.body#/expiresIn
+          fullAuthBody: $response.body
+      - stepId: searchCompanies
+        operationId: authSearchAPI.searchCompanies
+        outputs:
+          companies: $response.body#/companies
+          connectId: $response.body#/companies/0/id
+          companyName: $response.body#/companies/0/name
+          totalSize: $response.body#/totalSize
+          fullSearchBody: $response.body
+    outputs:
+      authToken: $steps.authenticate.outputs.token
+      expiresIn: $steps.authenticate.outputs.expiresIn
+      fullAuthBody: $steps.authenticate.outputs.fullAuthBody
+      companies: $steps.searchCompanies.outputs.companies
+      connectId: $steps.searchCompanies.outputs.connectId
+      companyName: $steps.searchCompanies.outputs.companyName
+      totalSize: $steps.searchCompanies.outputs.totalSize
+      fullSearchBody: $steps.searchCompanies.outputs.fullSearchBody
