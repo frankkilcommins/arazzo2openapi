@@ -194,9 +194,14 @@ export class TypeResolver {
         // New behavior: look up the step's output expression
         const outputExpression = step.outputs[outputName];
 
-        // Parse the output expression to extract the path
-        // Expected format: $response.body.propertyName or $response.header.headerName
-        const expressionMatch = outputExpression.match(/^\$response\.(body|header)\.?(.*)$/);
+        // Parse the output expression to extract the path.
+        // Supported formats:
+        //   $response.body                  → whole response body
+        //   $response.body#/token           → JSON Pointer into body
+        //   $response.body#/items/0/id      → JSON Pointer into nested array
+        //   $response.body.propertyName     → dot-notation (legacy)
+        //   $response.header.headerName     → header value (always string)
+        const expressionMatch = outputExpression.match(/^\$response\.(body|header)([#.]?)(.*)$/);
         if (!expressionMatch) {
           return this.getFallbackType(
             `Unsupported output expression format: ${outputExpression}`,
@@ -204,7 +209,7 @@ export class TypeResolver {
           );
         }
 
-        const [, responseType, responsePath] = expressionMatch;
+        const [, responseType, separator, rest] = expressionMatch;
 
         if (responseType === 'header') {
           // Headers are always strings
@@ -216,33 +221,46 @@ export class TypeResolver {
           };
         }
 
-        // Resolve $ref if present
+        // Resolve $ref at the root response schema
         targetSchema = this.resolveSchemaRef(targetSchema, openapiDoc);
 
-        // Navigate through the response body path
-        if (responsePath) {
-          const pathParts = responsePath.split('.');
-          for (const part of pathParts) {
-            if (!part) continue;
-
-            const properties = targetSchema.get?.('properties');
-            if (!properties) {
-              return this.getFallbackType(
-                `No properties found at path: ${responsePath}`,
-                'low'
-              );
-            }
-
-            targetSchema = properties.get?.(part);
+        // Navigate into the response body when a path is present
+        if (rest) {
+          if (separator === '#') {
+            // JSON Pointer notation: #/companies/0/id → navigate with RFC 6901 semantics
+            targetSchema = this.navigateJsonPath(targetSchema, rest);
             if (!targetSchema) {
               return this.getFallbackType(
-                `Property "${part}" not found in schema`,
+                `JSON Pointer "${rest}" could not be resolved in response schema`,
                 'low'
               );
             }
-
-            // Resolve $ref for nested properties
             targetSchema = this.resolveSchemaRef(targetSchema, openapiDoc);
+          } else {
+            // Dot-notation path: prop.subprop (legacy / less common)
+            const pathParts = rest.split('.');
+            for (const part of pathParts) {
+              if (!part) continue;
+
+              const properties = targetSchema.get?.('properties');
+              if (!properties) {
+                return this.getFallbackType(
+                  `No properties found at path: ${rest}`,
+                  'low'
+                );
+              }
+
+              targetSchema = properties.get?.(part);
+              if (!targetSchema) {
+                return this.getFallbackType(
+                  `Property "${part}" not found in schema`,
+                  'low'
+                );
+              }
+
+              // Resolve $ref for nested properties
+              targetSchema = this.resolveSchemaRef(targetSchema, openapiDoc);
+            }
           }
         }
       } else {
